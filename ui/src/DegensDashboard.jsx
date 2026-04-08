@@ -14,12 +14,12 @@ const ADMIN_VAULT_KEY = "degens_admin_vault_v1";
 
 // ─── Demo / offline mock data ────────────────────────────────────────────────
 const DEMO_BOTS = [
-  { id:"bot1_dice",    name:"RIZZ",          platform:"stake",  bankroll:187.42, start_amount:100, target_amount:500, floor_amount:40,  roi_pct:87.4,  winRate:64, bets:2140, wins:1370, losses:770,  phase:"normal",      streak:4,  vault:22,  total_withdrawn:18,  halted:false, danger:false, execution_mode:"live",      strategy_mode:"balanced",  progress_pct:24, milestoneHit:false },
-  { id:"bot2_limbo",   name:"GHOST",         platform:"stake",  bankroll:134.80, start_amount:100, target_amount:500, floor_amount:40,  roi_pct:34.8,  winRate:58, bets:1820, wins:1056, losses:764,  phase:"careful",     streak:-2, vault:8,   total_withdrawn:0,   halted:false, danger:false, execution_mode:"live",      strategy_mode:"conservative", progress_pct:9, milestoneHit:false },
-  { id:"bot3_mines",   name:"KABOOM",        platform:"stake",  bankroll:76.50,  start_amount:100, target_amount:500, floor_amount:40,  roi_pct:-23.5, winRate:44, bets:990,  wins:436,  losses:554,  phase:"floor",       streak:-8, vault:0,   total_withdrawn:0,   halted:false, danger:true,  execution_mode:"live",      strategy_mode:"aggressive", progress_pct:0, milestoneHit:false },
-  { id:"bot4_poly",    name:"ORACLE",        platform:"poly",   bankroll:320.10, start_amount:200, target_amount:1000,floor_amount:80,  roi_pct:60.1,  winRate:71, bets:430,  wins:305,  losses:125,  phase:"turbo",       streak:11, vault:60,  total_withdrawn:40,  halted:false, danger:false, execution_mode:"paper",     strategy_mode:"aggressive", progress_pct:31, milestoneHit:true  },
-  { id:"bot5_poly",    name:"PROPHET",       platform:"poly",   bankroll:210.00, start_amount:200, target_amount:1000,floor_amount:80,  roi_pct:5.0,   winRate:55, bets:210,  wins:116,  losses:94,   phase:"normal",      streak:1,  vault:10,  total_withdrawn:0,   halted:false, danger:false, execution_mode:"paper",     strategy_mode:"balanced",  progress_pct:4, milestoneHit:false },
-  { id:"bot7_momentum",name:"SATURN",         platform:"stake",  bankroll:450.00, start_amount:400, target_amount:2000,floor_amount:160, roi_pct:12.5,  winRate:61, bets:680,  wins:415,  losses:265,  phase:"safe",        streak:3,  vault:35,  total_withdrawn:10,  halted:false, danger:false, execution_mode:"simulated", strategy_mode:"balanced",  progress_pct:6, milestoneHit:false },
+  { id:"bot1_dice",    name:"Dice Runner",   platform:"stake",  bankroll:187.42, start_amount:100, target_amount:500, floor_amount:40,  roi_pct:87.4,  winRate:64, bets:2140, wins:1370, losses:770,  phase:"normal",      streak:4,  vault:22,  total_withdrawn:18,  halted:false, danger:false, execution_mode:"live",      strategy_mode:"balanced",  progress_pct:24, milestoneHit:false },
+  { id:"bot2_limbo",   name:"Limbo Edge",    platform:"stake",  bankroll:134.80, start_amount:100, target_amount:500, floor_amount:40,  roi_pct:34.8,  winRate:58, bets:1820, wins:1056, losses:764,  phase:"careful",     streak:-2, vault:8,   total_withdrawn:0,   halted:false, danger:false, execution_mode:"live",      strategy_mode:"conservative", progress_pct:9, milestoneHit:false },
+  { id:"bot3_mines",   name:"Mines Runner",  platform:"stake",  bankroll:76.50,  start_amount:100, target_amount:500, floor_amount:40,  roi_pct:-23.5, winRate:44, bets:990,  wins:436,  losses:554,  phase:"floor",       streak:-8, vault:0,   total_withdrawn:0,   halted:false, danger:true,  execution_mode:"live",      strategy_mode:"aggressive", progress_pct:0, milestoneHit:false },
+  { id:"bot4_poly",    name:"Poly Scout",    platform:"poly",   bankroll:320.10, start_amount:200, target_amount:1000,floor_amount:80,  roi_pct:60.1,  winRate:71, bets:430,  wins:305,  losses:125,  phase:"turbo",       streak:11, vault:60,  total_withdrawn:40,  halted:false, danger:false, execution_mode:"paper",     strategy_mode:"aggressive", progress_pct:31, milestoneHit:true  },
+  { id:"bot5_poly",    name:"Poly Hunter",   platform:"poly",   bankroll:210.00, start_amount:200, target_amount:1000,floor_amount:80,  roi_pct:5.0,   winRate:55, bets:210,  wins:116,  losses:94,   phase:"normal",      streak:1,  vault:10,  total_withdrawn:0,   halted:false, danger:false, execution_mode:"paper",     strategy_mode:"balanced",  progress_pct:4, milestoneHit:false },
+  { id:"bot7_momentum",name:"Momentum BTC",  platform:"stake",  bankroll:450.00, start_amount:400, target_amount:2000,floor_amount:160, roi_pct:12.5,  winRate:61, bets:680,  wins:415,  losses:265,  phase:"safe",        streak:3,  vault:35,  total_withdrawn:10,  halted:false, danger:false, execution_mode:"simulated", strategy_mode:"balanced",  progress_pct:6, milestoneHit:false },
 ];
 
 const _eq = (n, base, vol) => Array.from({length:30}, (_,i) => ({
@@ -3751,20 +3751,37 @@ function SimulateTab() {
   const [result,   setResult]   = useState(null);
   const [runs,     setRuns]     = useState([]);
   const [busy,     setBusy]     = useState(false);
+  const [progress, setProgress] = useState(0); // bets completed so far
 
   const run = () => {
     setBusy(true);
+    setProgress(0);
+    setResult(null);
+    const max = parseInt(maxBets) || 2000;
+    // Run in chunks so we can update the progress counter without blocking UI
+    const CHUNK = Math.max(50, Math.floor(max / 40));
+    const cfg = {
+      startM:  parseFloat(startM)  || 100,
+      targetM: parseFloat(targetM) || 500,
+      floorM:  parseFloat(floorM)  || 40,
+      strategy, platform, maxBets: max,
+    };
+    // Full sim still runs in one shot for accuracy, but we animate the counter
     setTimeout(() => {
-      const r = runSim({
-        startM:  parseFloat(startM)  || 100,
-        targetM: parseFloat(targetM) || 500,
-        floorM:  parseFloat(floorM)  || 40,
-        strategy, platform,
-        maxBets: parseInt(maxBets)   || 2000,
-      });
-      setResult(r);
-      setRuns(prev => [{ ...r, id: Date.now() }, ...prev].slice(0, 6));
-      setBusy(false);
+      const r = runSim(cfg);
+      // Animate bet counter from 0 → r.total
+      let displayed = 0;
+      const step = Math.max(1, Math.floor(r.total / 30));
+      const tick = setInterval(() => {
+        displayed = Math.min(displayed + step, r.total);
+        setProgress(displayed);
+        if (displayed >= r.total) {
+          clearInterval(tick);
+          setResult(r);
+          setRuns(prev => [{ ...r, id: Date.now() }, ...prev].slice(0, 6));
+          setBusy(false);
+        }
+      }, 30);
     }, 0);
   };
 
@@ -3845,17 +3862,37 @@ function SimulateTab() {
         </div>
       </div>
 
-      {/* ── Run button ── */}
-      <button onClick={run} disabled={busy} className="dg-btn"
-        style={{ background: busy ? `${T.fg}18` : T.fg, color: busy ? T.muted : T.bg,
-          border: "none", borderRadius: 6, padding: "10px 30px",
-          fontSize: 11, fontWeight: 800, letterSpacing: "0.14em",
-          cursor: busy ? "not-allowed" : "pointer",
-          display: "inline-flex", alignItems: "center", gap: 8,
-          marginBottom: SP.xl }}>
-        {busy && <Spinner size={12} />}
-        {busy ? "SIMULATING…" : "RUN SIMULATION"}
-      </button>
+      {/* ── Run button + live counter ── */}
+      <div style={{ marginBottom: SP.xl }}>
+        <button onClick={run} disabled={busy} className="dg-btn"
+          style={{ background: busy ? `${T.fg}18` : T.fg, color: busy ? T.muted : T.bg,
+            border: "none", borderRadius: 6, padding: "10px 30px",
+            fontSize: 11, fontWeight: 800, letterSpacing: "0.14em",
+            cursor: busy ? "not-allowed" : "pointer",
+            display: "inline-flex", alignItems: "center", gap: 8 }}>
+          {busy && <Spinner size={12} />}
+          {busy ? `SIMULATING…` : "RUN SIMULATION"}
+        </button>
+        {busy && (
+          <div style={{ marginTop: SP.md }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: SP.sm, marginBottom: 6 }}>
+              <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums" }}>
+                {progress.toLocaleString()}
+              </span>
+              <span style={{ fontSize: 10, color: T.muted, letterSpacing: "0.08em" }}>
+                / {(parseInt(maxBets)||2000).toLocaleString()} BETS
+              </span>
+            </div>
+            <div style={{ height: 2, background: T.line, borderRadius: 2, overflow: "hidden", width: 260 }}>
+              <div style={{
+                height: "100%", borderRadius: 2, background: T.blue,
+                width: `${Math.min(100, (progress / (parseInt(maxBets)||2000)) * 100)}%`,
+                transition: "width 0.03s linear"
+              }} />
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* ── Results ── */}
       {result && (
