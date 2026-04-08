@@ -724,15 +724,25 @@ def _load_credentials_from_db():
         logger.info("Twilio credentials loaded from DB.")
 
 
+def _keep_alive():
+    """Ping self every 14 min so Render free tier never sleeps."""
+    import requests as _req
+    while True:
+        time.sleep(14 * 60)
+        try:
+            _req.get("http://localhost:8000/api/ping", timeout=10)
+        except Exception:
+            pass
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
     _load_credentials_from_db()
     _load_bot_configs()
     _start_bots()
-    # Start Tor and remote tunnel in background — don't block startup
     threading.Thread(target=_start_tor,    daemon=True).start()
     threading.Thread(target=_start_tunnel, daemon=True).start()
+    threading.Thread(target=_keep_alive,   daemon=True).start()
     yield
     _stop_bots()
     if _tor_proc:    _tor_proc.terminate()
@@ -776,6 +786,9 @@ async def change_password(req: Request, body: dict = Body(...)):
     return {"ok": True}
 
 # ── Status endpoints (all require auth) ───────────────────────────────────────
+
+@app.get("/api/ping")
+async def ping(): return {"ok": True}
 
 @app.get("/api/status")
 async def get_status(req: Request):
