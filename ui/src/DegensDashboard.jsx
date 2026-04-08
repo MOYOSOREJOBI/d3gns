@@ -176,6 +176,9 @@ const T = {
   font: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`,
 };
 
+// ─── SPACING TOKENS ──────────────────────────────────────────────────────────
+const SP = { xs: 4, sm: 8, md: 14, lg: 20, xl: 28, xxl: 40 };
+
 function applyTheme(theme) {
   Object.assign(T, THEMES[theme] || THEMES.dark, { font: T.font });
 }
@@ -203,6 +206,20 @@ function getGlobalCss() {
     @keyframes milestoneIn { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
     @keyframes glowPulse { 0%,100%{box-shadow:0 0 0 rgba(89,212,122,0)} 50%{box-shadow:0 0 18px rgba(89,212,122,0.35)} }
     @keyframes turbo-pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 #00ff8844;} 50%{opacity:0.9;box-shadow:0 0 0 6px #00ff8800;} }
+    .dg-chip { transition: background .15s ease, border-color .15s ease, color .15s ease; }
+    .dg-chip:hover { background: rgba(255,255,255,0.06) !important; }
+    .dg-btn { transition: opacity .15s ease, background .15s ease; }
+    .dg-btn:hover:not(:disabled) { opacity: 0.82; }
+    .dg-btn:active:not(:disabled) { opacity: 0.65; transform: scale(0.98); }
+    .dg-nav-btn { transition: color .15s ease, border-color .15s ease; }
+    .dg-nav-btn:hover { color: ${T.fg} !important; }
+    .dg-row-hover:hover { background: rgba(255,255,255,0.025) !important; }
+    select { cursor: pointer; }
+    select:hover { border-color: rgba(94,161,255,0.3) !important; }
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 1.5px solid rgba(94,161,255,0.55);
+      outline-offset: 2px;
+    }
   `;
 }
 
@@ -210,8 +227,8 @@ function getGlobalCss() {
 //  ATOMS
 // ─────────────────────────────────────────────────────────────────────────────
 const lbl = {
-  fontSize: 10, color: T.muted, letterSpacing: "0.18em",
-  textTransform: "uppercase", fontWeight: 700,
+  fontSize: 9, color: T.muted, letterSpacing: "0.16em",
+  textTransform: "uppercase", fontWeight: 700, userSelect: "none",
 };
 
 function Label({ children, style }) {
@@ -220,27 +237,32 @@ function Label({ children, style }) {
 
 function Chip({ children, active, onClick, style }) {
   return (
-    <span onClick={onClick} style={{
-      fontSize: 11, border: `1px solid ${active ? "rgba(94,161,255,0.4)" : T.line}`,
-      padding: "7px 10px", borderRadius: 8,
+    <span onClick={onClick} className="dg-chip" style={{
+      fontSize: 10, border: `1px solid ${active ? "rgba(94,161,255,0.45)" : T.line}`,
+      padding: "6px 11px", borderRadius: 6,
       background: active ? "rgba(94,161,255,0.12)" : "rgba(255,255,255,0.02)",
-      color: active ? T.blue : T.fg,
-      fontWeight: active ? 700 : 400,
+      color: active ? T.blue : T.muted,
+      fontWeight: active ? 700 : 500,
       cursor: onClick ? "pointer" : "default",
-      whiteSpace: "nowrap",
+      whiteSpace: "nowrap", letterSpacing: "0.04em",
+      display: "inline-flex", alignItems: "center",
       ...style,
     }}>{children}</span>
   );
 }
 
 function ActionBtn({ children, onClick, color = T.green, style, disabled }) {
+  const c = color === T.green ? "rgba(89,212,122,0.14)" : `${color}22`;
+  const bg = color === T.green ? "rgba(89,212,122,0.08)" : `${color}10`;
   return (
-    <span onClick={disabled ? undefined : onClick} style={{
-      fontSize: 11, border: `1px solid rgba(89,212,122,0.14)`,
-      padding: "7px 10px", borderRadius: 8,
-      background: disabled ? "transparent" : "rgba(89,212,122,0.08)",
+    <span onClick={disabled ? undefined : onClick} className="dg-btn" style={{
+      fontSize: 10, border: `1px solid ${disabled ? T.line : c}`,
+      padding: "6px 12px", borderRadius: 6,
+      background: disabled ? "transparent" : bg,
       color: disabled ? T.muted : color, fontWeight: 700, cursor: disabled ? "not-allowed" : "pointer",
-      whiteSpace: "nowrap", opacity: disabled ? 0.5 : 1, ...style,
+      whiteSpace: "nowrap", opacity: disabled ? 0.45 : 1, letterSpacing: "0.06em",
+      display: "inline-flex", alignItems: "center", gap: 5,
+      ...style,
     }}>{children}</span>
   );
 }
@@ -706,6 +728,87 @@ function NotificationBell({ notifications, onClear }) {
   );
 }
 
+// ─── SHARED PRIMITIVES ────────────────────────────────────────────────────────
+function SectionHeader({ children, right, style }) {
+  return (
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+      marginBottom: SP.sm, paddingBottom: SP.xs,
+      borderBottom: `1px solid ${T.line}`,
+      ...style }}>
+      <span style={{ fontSize:9, fontWeight:800, letterSpacing:"0.16em", color:T.muted,
+        textTransform:"uppercase", userSelect:"none" }}>{children}</span>
+      {right && <span style={{ fontSize:9, color:T.muted, letterSpacing:"0.06em" }}>{right}</span>}
+    </div>
+  );
+}
+
+// StatBlock: T1 (hero) by default; pass tier="t2" for card-level values
+function StatBlock({ label, value, sub, color, style, tier = "t1" }) {
+  const sz = tier === "t1" ? 30 : tier === "t2" ? 22 : 18;
+  return (
+    <div style={{ ...style }}>
+      <div style={{ fontSize:9, fontWeight:700, color:T.muted, letterSpacing:"0.14em",
+        marginBottom: SP.xs, textTransform:"uppercase", userSelect:"none" }}>{label}</div>
+      <div style={{ fontSize: sz, fontWeight:800, color:color||T.fg, letterSpacing:"-0.03em",
+        lineHeight:1 }}>{value}</div>
+      {sub && <div style={{ fontSize:10, color:T.muted, marginTop: SP.xs, lineHeight:1.5,
+        letterSpacing:"0.02em" }}>{sub}</div>}
+    </div>
+  );
+}
+
+// Full status vocabulary — used consistently across all views
+function StatusChip({ status }) {
+  const map = {
+    live:       { label:"LIVE",    color:"#59d47a" },
+    healthy:    { label:"HEALTHY", color:"#59d47a" },
+    paper:      { label:"PAPER",   color:"#888"    },
+    paused:     { label:"PAUSED",  color:"#d6af41" },
+    warning:    { label:"WARN",    color:"#ff8f5a" },
+    warn:       { label:"WARN",    color:"#ff8f5a" },
+    error:      { label:"ERROR",   color:"#ef5f57" },
+    idle:       { label:"IDLE",    color:"#5f5f5f" },
+    stale:      { label:"STALE",   color:"#5f5f5f" },
+    floor:      { label:"FLOOR",   color:"#ef5f57" },
+    turbo:      { label:"TURBO",   color:"#00ff88" },
+    aggressive: { label:"AGGR",    color:"#59d47a" },
+    normal:     { label:"NORMAL",  color:"#5ea1ff" },
+    safe:       { label:"SAFE",    color:"#d6af41" },
+    ultra_safe: { label:"CAUTIOUS",color:"#ff8f5a" },
+    careful:    { label:"CAREFUL", color:"#c089ff" },
+  };
+  const s = map[status?.toLowerCase()] || { label:(status||"?").toUpperCase().slice(0,8), color:"#666" };
+  return (
+    <span style={{ fontSize:8, fontWeight:800, letterSpacing:"0.1em",
+      padding:"2px 6px", borderRadius:3,
+      background:`${s.color}15`, color:s.color, border:`1px solid ${s.color}28`,
+      whiteSpace:"nowrap", userSelect:"none", display:"inline-block" }}>
+      {s.label}
+    </span>
+  );
+}
+
+function EmptyState({ message, style }) {
+  return (
+    <div style={{ padding:"44px 0", textAlign:"center", color:T.muted,
+      fontSize:11, letterSpacing:"0.08em", lineHeight:1.8, ...style }}>
+      <div style={{ fontSize:18, marginBottom: SP.sm, opacity:0.3 }}>—</div>
+      {message || "No data yet"}
+    </div>
+  );
+}
+
+function InlineNotice({ type="info", children, style }) {
+  const col = type==="warn"?"#ff8f5a":type==="error"?"#ef5f57":type==="ok"?"#59d47a":"#5ea1ff";
+  return (
+    <div style={{ fontSize:10, color:col, padding:"9px 13px",
+      background:`${col}0e`, borderRadius:6, border:`1px solid ${col}22`,
+      lineHeight:1.7, ...style }}>
+      {children}
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  LOGIN
 // ─────────────────────────────────────────────────────────────────────────────
@@ -797,32 +900,51 @@ function Toolbar({ token, strategy, onStrategy, onDeposit }) {
 
   return (
     <div style={{
-      display: "grid", gridTemplateColumns: isMobile ? "1fr" : isTablet ? "1fr 1fr" : "1.8fr 1fr 0.9fr",
-      alignItems: "center", gap: 12,
-      borderTop: `1px solid ${T.line}`, borderBottom: `1px solid ${T.line}`,
-      padding: "12px 14px", flexShrink: 0,
+      display: "flex", alignItems: "center", gap: SP.lg, flexWrap: "wrap",
+      borderBottom: `1px solid ${T.line}`,
+      padding: "9px 18px", flexShrink: 0,
+      background: "rgba(255,255,255,0.012)",
     }}>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", minWidth: 0 }}>
-        <Label>Mode</Label>
+      {/* Mode group */}
+      <div style={{ display: "flex", gap: SP.xs, alignItems: "center" }}>
+        <Label style={{ marginRight: 4, whiteSpace: "nowrap" }}>Mode</Label>
         {STRATEGY_DEFS.map(s => (
-          <Chip key={s.id} active={strategy === s.id} onClick={() => setStrat(s.id)}>
-            {s.label} {s.scale}
+          <Chip key={s.id} active={strategy === s.id} onClick={() => setStrat(s.id)}
+            style={{ fontSize: 9, padding: "4px 9px" }}>
+            {s.label}
+            <span style={{ marginLeft: 4, opacity: 0.55, fontWeight: 400 }}>{s.scale}</span>
           </Chip>
         ))}
       </div>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <Label>Goal</Label>
+
+      {/* Divider */}
+      {!isMobile && <div style={{ width: 1, height: 18, background: T.line }} />}
+
+      {/* Goal group */}
+      <div style={{ display: "flex", gap: SP.xs, alignItems: "center" }}>
+        <Label style={{ marginRight: 4, whiteSpace: "nowrap" }}>Portfolio Goal</Label>
         <input value={goalInput} onChange={e => setGoalInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && saveGoal()}
-          placeholder="$6000" style={{ width: 88, padding: "7px 10px", borderRadius: 8, fontSize: 11, color: T.muted }} />
-        <Chip onClick={saveGoal} style={{ color: saved ? T.green : undefined }}>
-          {saved ? "SAVED" : "SET"}
+          placeholder="$6000"
+          style={{ width: 78, padding: "5px 9px", borderRadius: 5, fontSize: 10, color: T.muted }} />
+        <Chip onClick={saveGoal} style={{ fontSize: 9, padding: "4px 9px",
+          color: saved ? T.green : undefined,
+          borderColor: saved ? `${T.green}44` : undefined }}>
+          {saved ? "✓ SAVED" : "SET"}
         </Chip>
       </div>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <Label>Fund</Label>
+
+      {/* Divider */}
+      {!isMobile && <div style={{ width: 1, height: 18, background: T.line }} />}
+
+      {/* Fund group */}
+      <div style={{ display: "flex", gap: SP.xs, alignItems: "center" }}>
+        <Label style={{ marginRight: 4, whiteSpace: "nowrap" }}>Quick Fund</Label>
         {[100, 500, 1000].map(amt => (
-          <ActionBtn key={amt} onClick={() => onDeposit(amt)}>+${amt}</ActionBtn>
+          <ActionBtn key={amt} onClick={() => onDeposit(amt)}
+            style={{ fontSize: 9, padding: "4px 9px" }}>
+            +${amt}
+          </ActionBtn>
         ))}
       </div>
     </div>
@@ -926,82 +1048,164 @@ function OverviewTab({ bots, equity, info, historySummary, token }) {
       hWinRate: hBets ? ((hWins / hBets) * 100).toFixed(1) : "0.0",
     };
   }, [bots, info, historySummary]);
+  // Derive status alerts from existing frontend state
+  const coolingBots = bots.filter(b => b.coolingDown);
+  const haltedBots  = bots.filter(b => b.halted);
+  const staleBots   = bots.filter(b => b.bets === 0 && !b.halted);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, animation: "fadein .25s ease" }}>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : isTablet ? "repeat(3,minmax(0,1fr))" : "repeat(6,minmax(0,1fr))", gap: 14 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: SP.xl, animation: "fadein .25s ease" }}>
+
+      {/* ── Status Alert Strip ── only shown when there's something to flag ── */}
+      {(t.danger > 0 || coolingBots.length > 0 || haltedBots.length > 0) && (
+        <div style={{ display: "flex", flexDirection: "column", gap: SP.xs }}>
+          {t.danger > 0 && (
+            <InlineNotice type="error">
+              <strong>{t.danger} bot{t.danger > 1 ? "s" : ""} at floor</strong> — emergency micro-bets active. Review in Bots tab.
+            </InlineNotice>
+          )}
+          {coolingBots.length > 0 && (
+            <InlineNotice type="warn">
+              <strong>{coolingBots.length} bot{coolingBots.length > 1 ? "s" : ""} on circuit breaker</strong>
+              {" — "}{coolingBots.map(b => `${b.id} (${Math.ceil(b.cooldownSec || 0)}s)`).join(", ")}
+            </InlineNotice>
+          )}
+          {haltedBots.length > 0 && (
+            <InlineNotice type="warn">
+              <strong>{haltedBots.length} bot{haltedBots.length > 1 ? "s" : ""} halted</strong>
+              {" — "}{haltedBots.map(b => b.id).join(", ")}
+            </InlineNotice>
+          )}
+        </div>
+      )}
+
+      {/* ── T1 Metric Row ── */}
+      <div style={{ display: "grid",
+        gridTemplateColumns: isMobile ? "1fr 1fr" : isTablet ? "repeat(3,minmax(0,1fr))" : "repeat(6,minmax(0,1fr))",
+        gap: SP.md }}>
         {[
-          { k: "Portfolio",    v: `$${t.progress.toFixed(2)}`,  s: `$${t.bank.toFixed(0)} active + $${t.locked.toFixed(0)} out` },
-          { k: "P&L",          v: `${t.pnl >= 0 ? "+" : ""}$${t.pnl.toFixed(2)}`, s: `${t.pnlPct >= 0 ? "+" : ""}${t.pnlPct.toFixed(1)}%`, c: t.pnl >= 0 ? T.green : T.red },
-          { k: "Vault",        v: `$${t.vault.toFixed(2)}`,     s: "locked — never re-risked", c: T.yellow },
-          { k: "Withdrawn",    v: `$${t.locked.toFixed(2)}`,    s: "profit out of play", c: T.blue },
-          { k: "Avg Win Rate", v: `${t.winRate}%`,              s: `${bots.length} bots`, c: T.blue },
-          { k: "Bets",         v: t.bets.toLocaleString(),      s: "current session" },
-        ].map(m => (
-          <div key={m.k}>
-            <Label style={{ marginBottom: 8 }}>{m.k}{m.k === "Vault" ? <span style={{ marginLeft: 4, verticalAlign: "middle", opacity: 0.7 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></span> : ""}</Label>
-            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.06em", color: m.c || T.fg, lineHeight: 1 }}>{m.v}</div>
-            <div style={{ color: T.muted, fontSize: 10, fontWeight: 700, marginTop: 6 }}>{m.s}</div>
+          { k: "Portfolio",   v: `$${t.progress.toFixed(2)}`, s: `$${t.bank.toFixed(0)} active · $${t.locked.toFixed(0)} out` },
+          { k: "P&L",         v: `${t.pnl >= 0 ? "+" : ""}$${t.pnl.toFixed(2)}`, s: `${t.pnlPct >= 0 ? "+" : ""}${t.pnlPct.toFixed(1)}% vs start`, c: t.pnl >= 0 ? T.green : T.red },
+          { k: "Vault",       v: `$${t.vault.toFixed(2)}`,    s: "locked · never re-risked", c: T.yellow },
+          { k: "Withdrawn",   v: `$${t.locked.toFixed(2)}`,   s: "profit out of play", c: T.blue },
+          { k: "Win Rate",    v: `${t.winRate}%`,              s: `${t.active}/${bots.length} bots active`, c: T.blue },
+          { k: "Session Bets",v: t.bets.toLocaleString(),      s: `${t.hBets.toLocaleString()} all-time` },
+        ].map((m, i) => (
+          <div key={m.k} style={{
+            borderTop: `1px solid ${i === 0 ? T.blue + "55" : T.line}`,
+            paddingTop: SP.sm,
+          }}>
+            <Label style={{ marginBottom: SP.sm }}>{m.k}</Label>
+            <div style={{ fontSize: i === 0 ? 28 : 22, fontWeight: 800,
+              letterSpacing: "-0.04em", color: m.c || T.fg, lineHeight: 1 }}>
+              {m.v}
+            </div>
+            <div style={{ color: T.muted, fontSize: 10, marginTop: SP.xs, lineHeight: 1.5 }}>{m.s}</div>
           </div>
         ))}
       </div>
 
-      {t.danger > 0 && (
-        <div style={{ padding: "10px 14px", border: `1px solid rgba(239,95,87,0.3)`, background: "rgba(239,95,87,0.06)",
-          fontSize: 11, color: T.red, fontWeight: 700, animation: "pulse 2s infinite" }}>
-          {t.danger} bot{t.danger > 1 ? "s" : ""} in danger zone - at/below floor. Micro-bets active.
-        </div>
-      )}
-
+      {/* ── Compact Bot Strip — snapshot only, full workspace is in Bots tab ── */}
       <div>
-        <Label style={{ marginBottom: 8 }}>Money flow</Label>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.25fr .75fr", gap: 14 }}>
-          <div style={{ borderTop: `1px solid ${T.line}`, height: 280, paddingTop: 10 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={overviewSeries} margin={{ top: 10, right: 8, bottom: 0, left: -20 }}>
-                <defs>
-                  <linearGradient id="moneyFlow" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={T.blue} stopOpacity={0.2} />
-                    <stop offset="100%" stopColor={T.blue} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke={T.line} />
-                <XAxis dataKey="label" tick={{ fontSize: 8, fill: T.muted }} tickLine={false} axisLine={false} interval={Math.max(1, Math.floor((overviewSeries.length || 1) / 7))} />
-                <YAxis yAxisId="money" tick={{ fontSize: 8, fill: T.muted }} tickLine={false} axisLine={false} />
-                <YAxis yAxisId="pct" orientation="right" tick={{ fontSize: 8, fill: T.muted }} tickLine={false} axisLine={false} />
-                <Tooltip content={<Tip />} />
-                <ReferenceLine yAxisId="money" y={t.starts} stroke={T.line} strokeDasharray="4 4" />
-                <Area yAxisId="money" type="monotone" dataKey="portfolio" stroke={T.blue} strokeWidth={2} fill="url(#moneyFlow)" name="Portfolio" dot={false} isAnimationActive={false} />
-                <Line yAxisId="money" type="monotone" dataKey="pnl" stroke={t.pnl >= 0 ? T.green : T.red} strokeWidth={1.4} name="P&L" dot={false} isAnimationActive={false} />
-                <Line yAxisId="pct" type="monotone" dataKey="progress" stroke={T.yellow} strokeWidth={1.2} name="Progress %" dot={false} isAnimationActive={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
+        <SectionHeader right={`${bots.length} bots · full workspace → Bots tab`}>
+          Bot Snapshot
+        </SectionHeader>
+        {bots.length === 0 ? (
+          <EmptyState message="No bots running. Start the server first." />
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            {bots.map(b => {
+              const phCol = PHASE_COLORS[b.phase] || T.muted;
+              const d = equity.map(e => ({ v: e[b.id] || b.start_amount || 100 }));
+              return (
+                <div key={b.id} className="dg-row-hover" style={{
+                  display: "grid",
+                  gridTemplateColumns: isMobile
+                    ? "1fr auto auto"
+                    : "180px 1fr 64px 64px 64px 80px",
+                  gap: SP.sm, alignItems: "center",
+                  padding: `${SP.sm}px 0`,
+                  borderBottom: `1px solid ${T.line}22`,
+                }}>
+                  {/* Name + platform */}
+                  <div style={{ display: "flex", alignItems: "center", gap: SP.sm, minWidth: 0 }}>
+                    <div style={{ width: 3, height: 28, borderRadius: 2, background: b.color, flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: b.color,
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {b.name || b.id}
+                      </div>
+                      <div style={{ fontSize: 8, color: T.muted, letterSpacing: "0.08em" }}>
+                        {b.platform === "stake" ? "STAKE" : "POLY"}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Spark + goal bar */}
+                  {!isMobile && (
+                    <div style={{ minWidth: 0 }}>
+                      <GoalBar bankroll={b.bankroll} start={b.start_amount || 100}
+                        target={b.target_amount} floor={b.floor_amount}
+                        withdrawAt={b.withdraw_at} cautionAt={b.caution_at} recoveryAt={b.recovery_at} />
+                    </div>
+                  )}
+                  {/* Bankroll */}
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: "-0.02em" }}>
+                      ${b.bankroll.toFixed(2)}
+                    </div>
+                  </div>
+                  {/* ROI */}
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700,
+                      color: (b.roi_pct || 0) >= 0 ? T.green : T.red }}>
+                      {(b.roi_pct || 0) >= 0 ? "+" : ""}{(b.roi_pct || 0).toFixed(1)}%
+                    </div>
+                    <div style={{ fontSize: 8, color: T.muted }}>ROI</div>
+                  </div>
+                  {/* Win rate */}
+                  {!isMobile && (
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700 }}>{(b.winRate || 0).toFixed(0)}%</div>
+                      <div style={{ fontSize: 8, color: T.muted }}>WIN</div>
+                    </div>
+                  )}
+                  {/* Phase chip + status dot */}
+                  <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: SP.xs }}>
+                    <span style={{
+                      fontSize: 7, fontWeight: 800, padding: "2px 5px", borderRadius: 3,
+                      background: `${phCol}18`, color: phCol, letterSpacing: "0.06em",
+                      animation: b.phase === "turbo" ? "turbo-pulse 1.2s infinite" : "none",
+                    }}>
+                      {(b.phase || "").toUpperCase()}
+                    </span>
+                    <Dot ok={!b.halted} size={5} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <div style={{ display: "grid", gap: 12, alignContent: "start" }}>
-            {[
-              ["Money Made / Lost", `${t.pnl >= 0 ? "+" : ""}$${t.pnl.toFixed(2)}`],
-              ["Progress vs Start", `${((t.progress / Math.max(t.starts, 1)) * 100).toFixed(1)}%`],
-              ["Locked + Vault", `$${(t.locked + t.vault).toFixed(2)}`],
-              ["Live Goal Read", `${(+(info?.goalPct ?? 0)).toFixed(1)}%`],
-            ].map(([k, v]) => (
-              <div key={k} style={{ borderTop: `1px solid ${T.line}`, paddingTop: 10 }}>
-                <Label style={{ marginBottom: 7 }}>{k}</Label>
-                <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.05em" }}>{v}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
 
+      {/* ── Portfolio Equity Chart ── */}
       <div>
-        <Label style={{ marginBottom: 8 }}>Portfolio equity</Label>
-        <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.06em", marginBottom: 12 }}>${t.progress.toFixed(2)}</div>
-        <div style={{ borderTop: `1px solid ${T.line}`, height: 168 }}>
-          <GlowArea data={equity} dataKey="portfolio" color={T.blue} height={180}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
+          marginBottom: SP.sm }}>
+          <SectionHeader style={{ marginBottom: 0, borderBottom: "none", flex: 1 }}>
+            Portfolio Equity
+          </SectionHeader>
+          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.04em" }}>
+            ${t.progress.toFixed(2)}
+          </div>
+        </div>
+        <div style={{ borderTop: `1px solid ${T.line}`, height: 200 }}>
+          <GlowArea data={equity} dataKey="portfolio" color={T.blue} height={210}
             refLines={[{ y: t.starts, color: "rgba(255,255,255,0.12)", label: "start" }]} />
         </div>
-        <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: "8px 14px" }}>
+        {/* Bot legend */}
+        <div style={{ marginTop: SP.sm, display: "flex", flexWrap: "wrap", gap: `${SP.xs}px ${SP.md}px` }}>
           {bots.map(b => (
-            <span key={b.id} style={{ fontSize: 10, color: b.color, display: "flex", alignItems: "center", gap: 5 }}>
+            <span key={b.id} style={{ fontSize: 9, color: b.color, display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor", display: "inline-block" }} />
               {b.name || b.id}
             </span>
@@ -1009,88 +1213,81 @@ function OverviewTab({ bots, equity, info, historySummary, token }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 14 }}>
-        {bots.map(b => {
-          // Use bot ID directly as equity key (snapshots store full IDs)
-          const d       = equity.map(e => ({ v: e[b.id] || b.start_amount || 100 }));
-          const phCol   = PHASE_COLORS[b.phase] || T.muted;
-          const isTurbo = b.phase === "turbo";
-          const stratLbl = STRATEGY_LABELS[b.strategy] || (b.strategy || "").replace(/_/g," ");
-          return (
-            <div key={b.id} style={{ borderTop: `2px solid ${b.color}`, paddingTop: 10 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: b.color }}>{b.name || b.id}</span>
-                <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                  {b.danger && <span style={{ color: T.red }}><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span>}
-                  <span style={{
-                    fontSize: 7, fontWeight: 700, padding: "1px 4px", borderRadius: 3,
-                    background: `${phCol}22`, color: phCol, letterSpacing: "0.05em",
-                    animation: isTurbo ? "turbo-pulse 1.2s infinite" : "none",
-                    display: "inline-flex", alignItems: "center", gap: 3,
-                  }}>
-                    {isTurbo && <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>}
-                    {(b.phase || "").toUpperCase()}
-                  </span>
-                  <Dot ok={!b.halted} size={5} />
-                </div>
-              </div>
-              <div style={{ fontSize: 7, color: T.muted, marginBottom: 4, letterSpacing: "0.08em" }}>
-                {b.platform === "stake" ? "STAKE" : "POLY"} · {stratLbl.toUpperCase()}
-              </div>
-              {b.platform === "poly" && (
-                <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 6 }}>
-                  <Chip style={{ padding: "3px 6px", fontSize: 8, color: T.blue }}>REAL DATA</Chip>
-                  <Chip style={{ padding: "3px 6px", fontSize: 8, color: T.yellow }}>PAPER EXEC</Chip>
-                  <Chip style={{ padding: "3px 6px", fontSize: 8 }}>{b.scan_opportunity_count || 0} OPPS</Chip>
-                </div>
-              )}
-              <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.05em", marginBottom: 2 }}>${b.bankroll.toFixed(2)}</div>
-              <div style={{ fontSize: 9, color: (b.roi_pct || 0) >= 0 ? T.green : T.red, marginBottom: 7 }}>
-                {(b.roi_pct || 0) >= 0 ? "+" : ""}{(b.roi_pct || 0).toFixed(1)}% ROI
-              </div>
-              <GoalBar bankroll={b.bankroll} start={b.start_amount || 100} target={b.target_amount}
-                floor={b.floor_amount} withdrawAt={b.withdraw_at} cautionAt={b.caution_at} recoveryAt={b.recovery_at} />
-              <div style={{ height: 20, borderTop: `1px solid ${b.color}22`, background: `linear-gradient(180deg, ${b.color}10, transparent)` }}>
-                <MiniSpark data={d} color={b.color} height={20} />
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 3, marginTop: 7, fontSize: 7, color: T.muted }}>
-                <div>W%<br /><span style={{ color: T.fg, fontSize: 10, fontWeight: 800 }}>{(b.winRate || 0).toFixed(0)}%</span></div>
-                <div>BETS<br /><span style={{ color: T.fg, fontSize: 10, fontWeight: 800 }}>{b.bets || 0}</span></div>
-                <div>STREAK<br /><span style={{ color: (b.streak || 0) >= 0 ? T.green : T.red, fontSize: 10, fontWeight: 800 }}>
-                  {(b.streak || 0) >= 0 ? "+" : ""}{b.streak || 0}
-                </span></div>
-              </div>
-              {b.platform === "poly" && b.scan_best_question && (
-                <div style={{ fontSize: 8, color: T.muted, lineHeight: 1.5, marginTop: 7 }}>
-                  Best live read: {b.scan_best_question.slice(0, 56)}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ display: "flex", gap: 28, flexWrap: "wrap", borderTop: `1px solid ${T.line}`, paddingTop: 18 }}>
-        {[
-          ["All-Time Bets",     t.hBets.toLocaleString()],
-          ["All-Time Win Rate", `${t.hWinRate}%`],
-          ["All-Time P&L",      `${t.hPnL >= 0 ? "+" : ""}$${t.hPnL.toFixed(2)}`],
-          ["Total Vault",    `$${t.vault.toFixed(2)}`],
-        ].map(([k, v]) => (
-          <div key={k}>
-            <Label style={{ marginBottom: 7 }}>{k}</Label>
-            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.05em" }}>{v}</div>
+      {/* ── Money Flow Chart + Side Stats ── */}
+      <div>
+        <SectionHeader>Money Flow</SectionHeader>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.3fr 0.7fr", gap: SP.md }}>
+          <div style={{ height: 260 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={overviewSeries} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+                <defs>
+                  <linearGradient id="moneyFlow" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={T.blue} stopOpacity={0.2} />
+                    <stop offset="100%" stopColor={T.blue} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke={T.line} />
+                <XAxis dataKey="label" tick={{ fontSize: 8, fill: T.muted }} tickLine={false} axisLine={false}
+                  interval={Math.max(1, Math.floor((overviewSeries.length || 1) / 7))} />
+                <YAxis yAxisId="money" tick={{ fontSize: 8, fill: T.muted }} tickLine={false} axisLine={false} />
+                <YAxis yAxisId="pct" orientation="right" tick={{ fontSize: 8, fill: T.muted }} tickLine={false} axisLine={false} />
+                <Tooltip content={<Tip />} />
+                <ReferenceLine yAxisId="money" y={t.starts} stroke={T.line} strokeDasharray="4 4" />
+                <Area yAxisId="money" type="monotone" dataKey="portfolio" stroke={T.blue} strokeWidth={2}
+                  fill="url(#moneyFlow)" name="Portfolio" dot={false} isAnimationActive={false} />
+                <Line yAxisId="money" type="monotone" dataKey="pnl" stroke={t.pnl >= 0 ? T.green : T.red}
+                  strokeWidth={1.4} name="P&L" dot={false} isAnimationActive={false} />
+                <Line yAxisId="pct" type="monotone" dataKey="progress" stroke={T.yellow}
+                  strokeWidth={1.2} name="Progress %" dot={false} isAnimationActive={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
           </div>
-        ))}
+          {/* Side stats */}
+          <div style={{ display: "grid", gap: SP.sm, alignContent: "start" }}>
+            {[
+              { k: "P&L", v: `${t.pnl >= 0 ? "+" : ""}$${t.pnl.toFixed(2)}`, c: t.pnl >= 0 ? T.green : T.red },
+              { k: "vs Start", v: `${((t.progress / Math.max(t.starts, 1)) * 100).toFixed(1)}%` },
+              { k: "Secured", v: `$${(t.locked + t.vault).toFixed(2)}` },
+              { k: "Goal", v: `${(+(info?.goalPct ?? 0)).toFixed(1)}%`, c: T.green },
+            ].map(m => (
+              <div key={m.k} style={{ borderTop: `1px solid ${T.line}`, paddingTop: SP.sm }}>
+                <Label style={{ marginBottom: SP.xs }}>{m.k}</Label>
+                <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.04em",
+                  color: m.c || T.fg }}>{m.v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, borderTop: `1px solid ${T.line}`, paddingTop: 18 }}>
+      {/* ── All-Time Record ── */}
+      <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: SP.md }}>
+        <SectionHeader>All-Time Record</SectionHeader>
+        <div style={{ display: "flex", gap: SP.xl, flexWrap: "wrap" }}>
+          {[
+            { k: "Bets",     v: t.hBets.toLocaleString() },
+            { k: "Win Rate", v: `${t.hWinRate}%` },
+            { k: "P&L",      v: `${t.hPnL >= 0 ? "+" : ""}$${t.hPnL.toFixed(2)}`, c: t.hPnL >= 0 ? T.green : T.red },
+            { k: "Vault",    v: `$${t.vault.toFixed(2)}`, c: T.yellow },
+          ].map(m => (
+            <div key={m.k}>
+              <Label style={{ marginBottom: SP.xs }}>{m.k}</Label>
+              <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.04em",
+                color: m.c || T.fg }}>{m.v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Live Market Signals ── */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: SP.md,
+        borderTop: `1px solid ${T.line}`, paddingTop: SP.md }}>
         <div>
-          <Label style={{ marginBottom: 10 }}>Volume Spikes</Label>
+          <SectionHeader>Volume Spikes</SectionHeader>
           <VolumeSpikeFeed token={token} />
         </div>
         <div>
-          <Label style={{ marginBottom: 10 }}>Arbitrage Opportunities</Label>
+          <SectionHeader>Arbitrage Opportunities</SectionHeader>
           <ArbitragePanel token={token} />
         </div>
       </div>
@@ -1101,7 +1298,7 @@ function OverviewTab({ bots, equity, info, historySummary, token }) {
 // ─────────────────────────────────────────────────────────────────────────────
 //  BOTS TAB
 // ─────────────────────────────────────────────────────────────────────────────
-function BotsTab({ token, bots, equity }) {
+function BotsTab({ token, bots, equity, botFilter, setBotFilter, expandedBots, setExpandedBots }) {
   const [scales,   setScales]   = useState({});
   const [modes,    setModes]    = useState({});
   const [feedback, setFeedback] = useState({});
@@ -1133,10 +1330,50 @@ function BotsTab({ token, bots, equity }) {
     setTimeout(() => setFeedback(p => ({ ...p, [bid]: false })), 900);
   };
 
+  const filteredBots = bots.filter(b => {
+    if (botFilter === "all") return true;
+    if (botFilter === "stake") {
+      const g = (b.game || b.strategy || "").toLowerCase();
+      return g.includes("dice") || g.includes("limbo") || g.includes("mines") || b.platform === "stake";
+    }
+    if (botFilter === "poly") {
+      const g = (b.game || b.strategy || "").toLowerCase();
+      return g.includes("poly") || b.platform === "poly" || b.platform === "polymarket";
+    }
+    if (botFilter === "paused") {
+      return (b.cooldownSec || 0) > 0 || b.phase === "floor";
+    }
+    return true;
+  });
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14, animation: "fadein .25s ease" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: SP.md, animation: "fadein .25s ease" }}>
+      {/* ── Filter bar ── */}
+      <div style={{ display: "flex", gap: SP.xs, alignItems: "center", flexWrap: "wrap",
+        borderBottom: `1px solid ${T.line}`, paddingBottom: SP.sm }}>
+        {[["all","ALL"],["stake","STAKE"],["poly","POLY"],["paused","PAUSED"]].map(([id, label]) => (
+          <button key={id} onClick={() => setBotFilter(id)} className="dg-nav-btn"
+            style={{
+              padding: "4px 10px", borderRadius: 5, fontSize: 9, fontWeight: 800,
+              letterSpacing: "0.1em", cursor: "pointer",
+              background: botFilter === id ? `${T.blue}18` : "transparent",
+              border: `1px solid ${botFilter === id ? T.blue + "66" : T.line}`,
+              color: botFilter === id ? T.blue : T.muted,
+              transition: "all .15s",
+            }}>
+            {label}
+            {id !== "all" && <span style={{ marginLeft: 5, fontSize: 8, opacity: 0.65 }}>
+              {id === "stake" ? bots.filter(b => { const g=(b.game||b.strategy||"").toLowerCase(); return g.includes("dice")||g.includes("limbo")||g.includes("mines")||b.platform==="stake"; }).length
+               : id === "poly" ? bots.filter(b => { const g=(b.game||b.strategy||"").toLowerCase(); return g.includes("poly")||b.platform==="poly"||b.platform==="polymarket"; }).length
+               : bots.filter(b => (b.cooldownSec||0)>0||b.phase==="floor").length}
+            </span>}
+          </button>
+        ))}
+        <span style={{ fontSize: 10, color: T.muted, marginLeft: 4 }}>{filteredBots.length} bot{filteredBots.length !== 1 ? "s" : ""}</span>
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
-        {bots.map(b => {
+        {filteredBots.map(b => {
           const d      = equity.map(e => ({ v: e[b.id] || b.start_amount || 100 }));
           const sc     = scales[b.id] ?? 1.0;
           const md     = modes[b.id]  ?? "balanced";
@@ -1145,12 +1382,15 @@ function BotsTab({ token, bots, equity }) {
           const isTurbo = b.phase === "turbo";
           const stratLbl = STRATEGY_LABELS[b.strategy] || (b.strategy || "").replace(/_/g," ");
 
+          const cardExpanded = expandedBots[b.id] || false;
+
           return (
             <div key={b.id} style={{
               borderTop: `2px solid ${b.color}`, padding: "10px 0 0",
               opacity: b.halted ? 0.55 : 1, transition: "opacity .2s",
               animation: feedback[b.id] ? "glowPulse 0.9s ease" : "none",
             }}>
+              {/* ── Compact header (always visible) ── */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: b.color }}>{b.name || b.id}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -1166,135 +1406,176 @@ function BotsTab({ token, bots, equity }) {
                     {(b.phase || "").toUpperCase()}
                   </span>
                   <Dot ok={!b.halted} size={5} />
-                </div>
-              </div>
-
-              <div style={{ fontSize: 7, color: T.muted, marginBottom: 5, letterSpacing: "0.07em" }}>
-                {b.platform === "stake" ? "STAKE" : "POLY"} · {stratLbl.toUpperCase()}
-                {b.coolingDown && <span style={{ color: T.orange, marginLeft: 6 }}>CB {Math.ceil(b.cooldownSec)}s</span>}
-              </div>
-              {b.platform === "poly" && (
-                <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
-                  <Chip style={{ padding: "3px 6px", fontSize: 8, color: T.blue }}>REAL DATA</Chip>
-                  <Chip style={{ padding: "3px 6px", fontSize: 8, color: T.yellow }}>PAPER EXEC</Chip>
-                  <Chip style={{ padding: "3px 6px", fontSize: 8 }}>{b.scan_opportunity_count || 0} OPPS</Chip>
-                  <Chip style={{ padding: "3px 6px", fontSize: 8 }}>{b.open_positions || 0} OPEN</Chip>
-                </div>
-              )}
-
-              <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.05em", marginBottom: 2 }}>
-                ${b.bankroll.toFixed(2)}
-              </div>
-              <div style={{ fontSize: 9, color: (b.roi_pct || 0) >= 0 ? T.green : T.red, marginBottom: 7 }}>
-                {(b.roi_pct || 0) >= 0 ? "+" : ""}{(b.roi_pct || 0).toFixed(1)}% · streak {(b.streak || 0) >= 0 ? "+" : ""}{b.streak || 0}
-              </div>
-
-              <GoalBar bankroll={b.bankroll} start={b.start_amount || 100} target={b.target_amount}
-                floor={b.floor_amount} withdrawAt={b.withdraw_at} cautionAt={b.caution_at} recoveryAt={b.recovery_at} />
-
-              <div style={{ height: 22, borderTop: `1px solid ${b.color}22`,
-                background: `linear-gradient(180deg, ${b.color}08, transparent)`, marginBottom: 10 }}>
-                <MiniSpark data={d} dataKey="v" color={b.color} height={22} />
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 10 }}>
-                {[
-                  ["BANK",  `$${b.bankroll.toFixed(0)}`],
-                  ["OUT",   `$${(b.total_withdrawn || 0).toFixed(0)}`],
-                  ["VAULT", `$${(b.vault || 0).toFixed(0)}`],
-                  ["W%",    `${(b.winRate || 0).toFixed(0)}%`],
-                ].map(([k, v]) => (
-                  <div key={k}>
-                    <Label style={{ marginBottom: 3 }}>{k}</Label>
-                    <div style={{ fontSize: 11, fontWeight: 800 }}>{v}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6, marginBottom: 10 }}>
-                {[
-                  ["25B ROI", `${(b.rolling?.w25?.roi_pct || 0) >= 0 ? "+" : ""}${(b.rolling?.w25?.roi_pct || 0).toFixed(1)}%`],
-                  ["100B ROI", `${(b.rolling?.w100?.roi_pct || 0) >= 0 ? "+" : ""}${(b.rolling?.w100?.roi_pct || 0).toFixed(1)}%`],
-                  ["AUTO", `${b.autoDownscales || 0}x`],
-                ].map(([k, v]) => (
-                  <div key={k}>
-                    <Label style={{ marginBottom: 3 }}>{k}</Label>
-                    <div style={{ fontSize: 11, fontWeight: 800 }}>{v}</div>
-                  </div>
-                ))}
-              </div>
-              {b.lastDownscaleReason && (
-                <div style={{ fontSize: 9, color: T.yellow, lineHeight: 1.6, marginBottom: 10 }}>
-                  Auto-managed: {b.lastDownscaleReason}
-                </div>
-              )}
-              {b.platform === "poly" && (b.scan_best_question || b.scan_best_edge != null) && (
-                <div style={{ fontSize: 9, color: T.muted, lineHeight: 1.6, marginBottom: 10 }}>
-                  {b.scan_best_edge != null ? `Best edge ${b.scan_best_edge >= 0 ? "+" : ""}${Number(b.scan_best_edge).toFixed(3)}.` : "No live edge yet."}
-                  {b.scan_best_question ? ` ${b.scan_best_question.slice(0, 70)}` : ""}
-                </div>
-              )}
-              {b.runtime_error && (
-                <div style={{ fontSize: 9, color: T.red, lineHeight: 1.6, marginBottom: 10 }}>
-                  Feed issue: {b.runtime_error}
-                </div>
-              )}
-
-              <Label style={{ marginBottom: 6 }}>Strategy</Label>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 4, marginBottom: 10 }}>
-                {STRATEGY_DEFS.map(s => (
-                  <button key={s.id} onClick={() => !b.halted && setMode(b.id, s.id)} disabled={b.halted}
-                    style={{
-                      padding: "5px 4px", borderRadius: 6, fontSize: 9, fontWeight: 700,
-                      border: `1px solid ${md === s.id ? "rgba(94,161,255,0.4)" : T.line}`,
-                      background: md === s.id ? "rgba(94,161,255,0.12)" : "transparent",
-                      color: md === s.id ? T.blue : T.muted, letterSpacing: "0.04em",
-                      cursor: b.halted ? "not-allowed" : "pointer",
-                    }}>
-                    {s.label} {s.scale}
+                  {/* Chevron toggle */}
+                  <button onClick={() => setExpandedBots(p => ({ ...p, [b.id]: !p[b.id] }))}
+                    style={{ background: "none", border: "none", color: T.muted, cursor: "pointer",
+                      padding: "0 2px", fontSize: 9, lineHeight: 1, marginLeft: 2 }}
+                    title={cardExpanded ? "Collapse" : "Expand"}>
+                    {cardExpanded ? "▲" : "▼"}
                   </button>
-                ))}
+                </div>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                <Label>Bet Scale</Label>
-                <span style={{ fontSize: 9, color: T.blue, fontWeight: 700 }}>{sc.toFixed(1)}x</span>
+              {/* Compact stats row — always visible */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: SP.xs,
+                marginBottom: SP.sm }}>
+                <div>
+                  <div style={{ fontSize: 8, color: T.muted, fontWeight: 700, letterSpacing: "0.1em",
+                    textTransform: "uppercase", marginBottom: 2 }}>Bank</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.02em" }}>
+                    ${b.bankroll.toFixed(2)}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 8, color: T.muted, fontWeight: 700, letterSpacing: "0.1em",
+                    textTransform: "uppercase", marginBottom: 2 }}>ROI</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.02em",
+                    color: (b.roi_pct||0) >= 0 ? T.green : T.red }}>
+                    {(b.roi_pct||0) >= 0 ? "+" : ""}{(b.roi_pct||0).toFixed(1)}%
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 8, color: T.muted, fontWeight: 700, letterSpacing: "0.1em",
+                    textTransform: "uppercase", marginBottom: 2 }}>Win%</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.02em" }}>
+                    {(b.winRate||0).toFixed(0)}%
+                  </div>
+                </div>
               </div>
-              <input type="range" min={0.1} max={5} step={0.1} value={sc}
-                disabled={b.halted}
-                onChange={e => setScales(p => ({ ...p, [b.id]: parseFloat(e.target.value) }))}
-                onMouseUp={e  => applyScale(b.id, parseFloat(e.target.value))}
-                onTouchEnd={e => applyScale(b.id, parseFloat(e.target.value))}
-                style={{ width: "100%", marginBottom: 3 }} />
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: T.muted }}>
-                <span>0.1x</span><span>2.5x</span><span>5x</span>
+              <div style={{ fontSize: 9, color: T.muted, letterSpacing: "0.04em",
+                marginBottom: cardExpanded ? SP.sm : 0 }}>
+                {b.bets || 0} bets · {b.platform === "stake" ? "STAKE" : "POLY"}
+                {b.bets === 0 && <span style={{ color: T.muted, marginLeft: 6, opacity: 0.6 }}>— no activity yet</span>}
               </div>
 
-              <button onClick={() => setExpanded(p => ({ ...p, [b.id]: !p[b.id] }))}
-                style={{ marginTop: 10, background: "none", border: "none", color: T.muted,
-                  fontSize: 9, cursor: "pointer", letterSpacing: "0.1em", padding: 0 }}>
-                {exp ? "HIDE CONFIG" : "CONFIGURE"}
-              </button>
+              {/* ── Expanded body ── */}
+              {cardExpanded && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 10, color: T.muted, marginBottom: 5, letterSpacing: "0.07em" }}>
+                    {stratLbl.toUpperCase()}
+                    {b.coolingDown && <span style={{ color: T.orange, marginLeft: 6 }}>CB {Math.ceil(b.cooldownSec)}s</span>}
+                  </div>
+                  {b.platform === "poly" && (
+                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
+                      <Chip style={{ padding: "3px 6px", fontSize: 8, color: T.blue }}>REAL DATA</Chip>
+                      <Chip style={{ padding: "3px 6px", fontSize: 8, color: T.yellow }}>PAPER EXEC</Chip>
+                      <Chip style={{ padding: "3px 6px", fontSize: 8 }}>{b.scan_opportunity_count || 0} OPPS</Chip>
+                      <Chip style={{ padding: "3px 6px", fontSize: 8 }}>{b.open_positions || 0} OPEN</Chip>
+                    </div>
+                  )}
 
-              {exp && <BotSetupCard bot={b} token={token} onSaved={() => setExpanded(p => ({ ...p, [b.id]: false }))} />}
+                  <div style={{ fontSize: 10, color: (b.roi_pct || 0) >= 0 ? T.green : T.red, marginBottom: 7 }}>
+                    streak {(b.streak || 0) >= 0 ? "+" : ""}{b.streak || 0}
+                  </div>
 
-              {/* Streak meter — last 7 bets as dots */}
-              {(b.last_7 || []).length > 0 && (
-                <div style={{ display: "flex", gap: 3, marginTop: 8 }}>
-                  {(b.last_7 || []).map((w, i) => (
-                    <div key={i} style={{
-                      width: 8, height: 8, borderRadius: "50%",
-                      background: w ? T.green : T.red, opacity: 0.8,
-                    }} />
-                  ))}
+                  <GoalBar bankroll={b.bankroll} start={b.start_amount || 100} target={b.target_amount}
+                    floor={b.floor_amount} withdrawAt={b.withdraw_at} cautionAt={b.caution_at} recoveryAt={b.recovery_at} />
+
+                  <div style={{ height: 22, borderTop: `1px solid ${b.color}22`,
+                    background: `linear-gradient(180deg, ${b.color}08, transparent)`, marginBottom: 10 }}>
+                    <MiniSpark data={d} dataKey="v" color={b.color} height={22} />
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 10 }}>
+                    {[
+                      ["BANK",  `$${b.bankroll.toFixed(0)}`],
+                      ["OUT",   `$${(b.total_withdrawn || 0).toFixed(0)}`],
+                      ["VAULT", `$${(b.vault || 0).toFixed(0)}`],
+                      ["W%",    `${(b.winRate || 0).toFixed(0)}%`],
+                    ].map(([k, v]) => (
+                      <div key={k}>
+                        <Label style={{ marginBottom: 3 }}>{k}</Label>
+                        <div style={{ fontSize: 11, fontWeight: 800 }}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6, marginBottom: 10 }}>
+                    {[
+                      ["25B ROI", `${(b.rolling?.w25?.roi_pct || 0) >= 0 ? "+" : ""}${(b.rolling?.w25?.roi_pct || 0).toFixed(1)}%`],
+                      ["100B ROI", `${(b.rolling?.w100?.roi_pct || 0) >= 0 ? "+" : ""}${(b.rolling?.w100?.roi_pct || 0).toFixed(1)}%`],
+                      ["AUTO", `${b.autoDownscales || 0}x`],
+                    ].map(([k, v]) => (
+                      <div key={k}>
+                        <Label style={{ marginBottom: 3 }}>{k}</Label>
+                        <div style={{ fontSize: 11, fontWeight: 800 }}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {b.lastDownscaleReason && (
+                    <div style={{ fontSize: 10, color: T.yellow, lineHeight: 1.6, marginBottom: 10 }}>
+                      Auto-managed: {b.lastDownscaleReason}
+                    </div>
+                  )}
+                  {b.platform === "poly" && (b.scan_best_question || b.scan_best_edge != null) && (
+                    <div style={{ fontSize: 10, color: T.muted, lineHeight: 1.6, marginBottom: 10 }}>
+                      {b.scan_best_edge != null ? `Best edge ${b.scan_best_edge >= 0 ? "+" : ""}${Number(b.scan_best_edge).toFixed(3)}.` : "No live edge yet."}
+                      {b.scan_best_question ? ` ${b.scan_best_question.slice(0, 70)}` : ""}
+                    </div>
+                  )}
+                  {b.runtime_error && (
+                    <div style={{ fontSize: 10, color: T.red, lineHeight: 1.6, marginBottom: 10 }}>
+                      Feed issue: {b.runtime_error}
+                    </div>
+                  )}
+
+                  <Label style={{ marginBottom: 6 }}>Strategy</Label>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 4, marginBottom: 10 }}>
+                    {STRATEGY_DEFS.map(s => (
+                      <button key={s.id} onClick={() => !b.halted && setMode(b.id, s.id)} disabled={b.halted}
+                        style={{
+                          padding: "5px 4px", borderRadius: 6, fontSize: 9, fontWeight: 700,
+                          border: `1px solid ${md === s.id ? "rgba(94,161,255,0.4)" : T.line}`,
+                          background: md === s.id ? "rgba(94,161,255,0.12)" : "transparent",
+                          color: md === s.id ? T.blue : T.muted, letterSpacing: "0.04em",
+                          cursor: b.halted ? "not-allowed" : "pointer",
+                        }}>
+                        {s.label} {s.scale}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                    <Label>Bet Scale</Label>
+                    <span style={{ fontSize: 9, color: T.blue, fontWeight: 700 }}>{sc.toFixed(1)}x</span>
+                  </div>
+                  <input type="range" min={0.1} max={5} step={0.1} value={sc}
+                    disabled={b.halted}
+                    onChange={e => setScales(p => ({ ...p, [b.id]: parseFloat(e.target.value) }))}
+                    onMouseUp={e  => applyScale(b.id, parseFloat(e.target.value))}
+                    onTouchEnd={e => applyScale(b.id, parseFloat(e.target.value))}
+                    style={{ width: "100%", marginBottom: 3 }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: T.muted }}>
+                    <span>0.1x</span><span>2.5x</span><span>5x</span>
+                  </div>
+
+                  <button onClick={() => setExpanded(p => ({ ...p, [b.id]: !p[b.id] }))}
+                    style={{ marginTop: 10, background: "none", border: "none", color: T.muted,
+                      fontSize: 9, cursor: "pointer", letterSpacing: "0.1em", padding: 0 }}>
+                    {exp ? "HIDE CONFIG" : "CONFIGURE"}
+                  </button>
+
+                  {exp && <BotSetupCard bot={b} token={token} onSaved={() => setExpanded(p => ({ ...p, [b.id]: false }))} />}
+
+                  {/* Streak meter — last 7 bets as dots */}
+                  {(b.last_7 || []).length > 0 && (
+                    <div style={{ display: "flex", gap: 3, marginTop: 8 }}>
+                      {(b.last_7 || []).map((w, i) => (
+                        <div key={i} style={{
+                          width: 8, height: 8, borderRadius: "50%",
+                          background: w ? T.green : T.red, opacity: 0.8,
+                        }} />
+                      ))}
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: T.muted,
+                    marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.line}` }}>
+                    <span>{b.bets || 0} bets - {b.wins || 0}W/{b.losses || 0}L</span>
+                    <span style={{ color: b.danger ? T.red : T.muted }}>{b.platform || "stake"}</span>
+                  </div>
                 </div>
               )}
-
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: T.muted,
-                marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.line}` }}>
-                <span>{b.bets || 0} bets - {b.wins || 0}W/{b.losses || 0}L</span>
-                <span style={{ color: b.danger ? T.red : T.muted }}>{b.platform || "stake"}</span>
-              </div>
             </div>
           );
         })}
@@ -1453,19 +1734,32 @@ function AnalyticsTab({ token, bots, equity }) {
     });
   };
 
-  const subTabs = [["equity","Equity"],["history","History"],["projections","Projections"],["workshop","Workshop"]];
+  const subTabs = [
+    ["equity","Equity","Portfolio curves + strength"],
+    ["history","History","Bet-level trade log"],
+    ["projections","Projections","Monte Carlo forward paths"],
+    ["workshop","Workshop","Strategy variant builder"],
+  ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14, animation: "fadein .25s ease" }}>
-      <div style={{ display: "flex", gap: 8, borderBottom: `1px solid ${T.line}`, paddingBottom: 12 }}>
-        {subTabs.map(([id, l]) => (
-          <button key={id} onClick={() => setSub(id)}
-            style={{ padding: "4px 0", marginRight: 12, background: "none", border: "none",
-              fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+    <div style={{ display: "flex", flexDirection: "column", gap: SP.md, animation: "fadein .25s ease" }}>
+      {/* ── Sub-tab navigation ── */}
+      <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${T.line}` }}>
+        {subTabs.map(([id, l, desc]) => (
+          <button key={id} onClick={() => setSub(id)} className="dg-nav-btn"
+            style={{ padding: "8px 16px", background: "none", border: "none",
+              borderBottom: sub === id ? `2px solid ${T.fg}` : "2px solid transparent",
+              marginBottom: -1,
+              fontSize: 10, fontWeight: sub === id ? 800 : 500,
+              letterSpacing: "0.08em", textTransform: "uppercase",
               color: sub === id ? T.fg : T.muted,
-              borderBottom: sub === id ? `1px solid ${T.fg}` : "1px solid transparent",
-              cursor: "pointer" }}>
-            {l}
+              cursor: "pointer", transition: "color .15s",
+              display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
+            <span>{l}</span>
+            {sub === id && (
+              <span style={{ fontSize: 8, fontWeight: 400, color: T.muted, letterSpacing: "0.04em",
+                textTransform: "none" }}>{desc}</span>
+            )}
           </button>
         ))}
       </div>
@@ -1525,13 +1819,22 @@ function AnalyticsTab({ token, bots, equity }) {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2,minmax(0,1fr))", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2,minmax(0,1fr))", gap: SP.md }}>
             {insightCards.map(card => (
-              <div key={card.title} style={{ borderTop: `1px solid ${card.tone}`, paddingTop: 12 }}>
-                <Label style={{ marginBottom: 8, color: card.tone }}>{card.title}</Label>
-                <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>{card.body}</div>
-                <div style={{ fontSize: 10, color: T.muted, lineHeight: 1.7, marginBottom: 8 }}>{card.reason}</div>
-                <div style={{ fontSize: 10, color: T.fg, lineHeight: 1.7 }}>{card.change}</div>
+              <div key={card.title} style={{ borderLeft: `2px solid ${card.tone}`, paddingLeft: SP.md }}>
+                <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.16em",
+                  color: card.tone, textTransform: "uppercase", marginBottom: SP.xs }}>
+                  {card.title}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 800, lineHeight: 1.3, marginBottom: SP.xs }}>
+                  {card.body}
+                </div>
+                <div style={{ fontSize: 10, color: T.muted, lineHeight: 1.7, marginBottom: SP.xs }}>
+                  {card.reason}
+                </div>
+                <div style={{ fontSize: 10, color: T.fg, lineHeight: 1.7, opacity: 0.8 }}>
+                  → {card.change}
+                </div>
               </div>
             ))}
           </div>
@@ -1938,144 +2241,226 @@ function WalletTab({ token, bots }) {
   const pnl            = totalProgress - starts;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 22, animation: "fadein .25s ease" }}>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: 14 }}>
-        {[
-          { k: "Active Bankroll", v: `$${totalBankroll.toFixed(2)}`,  c: T.fg    },
-          { k: "Withdrawn",       v: `$${totalWithdrawn.toFixed(2)}`, c: T.blue  },
-          { k: "Vault",           v: `$${totalVault.toFixed(2)}`,     c: T.yellow },
-          { k: "P&L",             v: `${pnl >= 0 ? "+" : ""}$${pnl.toFixed(2)}`, c: pnl >= 0 ? T.green : T.red },
-        ].map(m => (
-          <div key={m.k} style={{ borderTop: `1px solid ${T.line}`, paddingTop: 12 }}>
-            <Label style={{ marginBottom: 8 }}>{m.k}</Label>
-            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.05em", color: m.c }}>{m.v}</div>
-          </div>
-        ))}
+    <div style={{ display: "flex", flexDirection: "column", gap: SP.xl, animation: "fadein .25s ease",
+      maxWidth: 860 }}>
+
+      {/* ── SECTION A: Balance Summary ── */}
+      <div>
+        <SectionHeader>Balances</SectionHeader>
+        <div style={{ display: "grid",
+          gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,minmax(0,1fr))", gap: SP.md }}>
+          {[
+            { k: "Active Bankroll", v: `$${totalBankroll.toFixed(2)}`,  c: T.fg    },
+            { k: "P&L",             v: `${pnl >= 0 ? "+" : ""}$${pnl.toFixed(2)}`, c: pnl >= 0 ? T.green : T.red },
+            { k: "Vault",           v: `$${totalVault.toFixed(2)}`,     c: T.yellow },
+            { k: "Total Out",       v: `$${totalWithdrawn.toFixed(2)}`, c: T.blue  },
+          ].map(m => (
+            <div key={m.k} style={{ borderTop: `1px solid ${T.line}`, paddingTop: SP.sm }}>
+              <Label style={{ marginBottom: SP.xs }}>{m.k}</Label>
+              <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.04em", color: m.c }}>
+                {m.v}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: 16 }}>
-        <Label style={{ marginBottom: 10 }}>MetaMask Wallet</Label>
+      {/* ── SECTION B: Internal Money Movement (safe actions) ── */}
+      <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: SP.lg }}>
+        <SectionHeader>Internal — Move Money Safely</SectionHeader>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: SP.lg }}>
+
+          {/* Vault Lock */}
+          <div>
+            <Label style={{ marginBottom: SP.xs }}>Lock to Vault</Label>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: SP.sm, lineHeight: 1.6 }}>
+              Vault funds are never re-risked. Move profits here to protect them permanently.
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: SP.xs }}>
+              <select value={lockBot} onChange={e => setLockBot(e.target.value)}
+                style={{ padding: "7px 10px", borderRadius: 6, fontSize: 10 }}>
+                {bots.map(b => (
+                  <option key={b.id} value={b.id}>
+                    {b.id} — ${(b.total_withdrawn || 0).toFixed(2)} available
+                  </option>
+                ))}
+              </select>
+              <div style={{ display: "flex", gap: SP.xs, alignItems: "center" }}>
+                <input value={lockAmt} onChange={e => setLockAmt(e.target.value)}
+                  placeholder="Amount"
+                  style={{ flex: 1, padding: "7px 10px", borderRadius: 6, fontSize: 10 }} />
+                <ActionBtn onClick={lockToVault} color={T.yellow}>LOCK</ActionBtn>
+              </div>
+              {lockMsg && (
+                <InlineNotice type={lockMsg.includes("Error") ? "error" : "ok"}>
+                  {lockMsg}
+                </InlineNotice>
+              )}
+            </div>
+            {/* Per-bot vault breakdown */}
+            {bots.some(b => (b.vault || 0) > 0) && (
+              <div style={{ marginTop: SP.sm, display: "flex", flexDirection: "column" }}>
+                {bots.filter(b => (b.vault || 0) > 0).map(b => (
+                  <div key={b.id} className="dg-row-hover" style={{
+                    display: "flex", justifyContent: "space-between", padding: "6px 0",
+                    borderBottom: `1px solid ${T.line}33`, fontSize: 10 }}>
+                    <span style={{ color: b.color, fontWeight: 700 }}>{b.id}</span>
+                    <span style={{ color: T.yellow, fontWeight: 800 }}>
+                      ${(b.vault || 0).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Withdraw Profits */}
+          <div>
+            <Label style={{ marginBottom: SP.xs }}>Withdraw Profits</Label>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: SP.sm, lineHeight: 1.6 }}>
+              Request a withdrawal from a bot's bankroll back to your account.
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: SP.xs }}>
+              <select value={wdBotId} onChange={e => setWdBotId(e.target.value)}
+                style={{ padding: "7px 10px", borderRadius: 6, fontSize: 10 }}>
+                {bots.map(b => (
+                  <option key={b.id} value={b.id}>
+                    {b.id} — ${(b.total_withdrawn || 0).toFixed(2)} out
+                  </option>
+                ))}
+              </select>
+              <div style={{ display: "flex", gap: SP.xs, alignItems: "center" }}>
+                <input value={wdAmount} onChange={e => setWdAmount(e.target.value)}
+                  placeholder="Amount"
+                  style={{ flex: 1, padding: "7px 10px", borderRadius: 6, fontSize: 10 }} />
+                <ActionBtn onClick={withdraw} color={T.blue}>WITHDRAW</ActionBtn>
+              </div>
+              {wdMsg && (
+                <InlineNotice type={wdMsg.startsWith("Error") ? "error" : "ok"}>
+                  {wdMsg}
+                </InlineNotice>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── SECTION C: External Wallet (MetaMask) — elevated risk visual ── */}
+      <div style={{ borderTop: `1px solid rgba(255,143,90,0.3)`, paddingTop: SP.lg }}>
+        <SectionHeader style={{ borderColor: "rgba(255,143,90,0.18)" }}>
+          External — MetaMask / Ethereum
+        </SectionHeader>
+        <div style={{ fontSize: 10, color: T.muted, marginBottom: SP.sm, lineHeight: 1.6 }}>
+          Sends real ETH transactions on-chain. Double-check recipient address before sending.
+        </div>
         {!ethAccount ? (
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: SP.sm, alignItems: "center", flexWrap: "wrap" }}>
             <ActionBtn onClick={connectMM} disabled={mmBusy} color={T.orange}>
-              {mmBusy ? "CONNECTING..." : "CONNECT METAMASK"}
+              {mmBusy ? "CONNECTING…" : "CONNECT METAMASK"}
             </ActionBtn>
-            {mmMsg && <span style={{ fontSize: 10, color: mmMsg.startsWith("Connect") ? T.green : T.red }}>{mmMsg}</span>}
+            {mmMsg && <span style={{ fontSize: 10, color: T.red }}>{mmMsg}</span>}
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: SP.md }}>
+            <div style={{ display: "flex", gap: SP.xl, flexWrap: "wrap" }}>
               <div>
-                <Label style={{ marginBottom: 6 }}>Address</Label>
-                <div style={{ fontSize: 11, color: T.blue, fontWeight: 700 }}>
-                  {ethAccount.slice(0,8)}...{ethAccount.slice(-6)}
+                <Label style={{ marginBottom: SP.xs }}>Connected Address</Label>
+                <div style={{ fontSize: 11, color: T.orange, fontWeight: 700, fontFamily: "ui-monospace, monospace" }}>
+                  {ethAccount.slice(0,10)}…{ethAccount.slice(-8)}
                 </div>
               </div>
               <div>
-                <Label style={{ marginBottom: 6 }}>ETH Balance</Label>
-                <div style={{ fontSize: 18, fontWeight: 800, color: T.orange }}>{ethBalance ?? "--"} ETH</div>
+                <Label style={{ marginBottom: SP.xs }}>ETH Balance</Label>
+                <div style={{ fontSize: 18, fontWeight: 800, color: T.orange, letterSpacing: "-0.02em" }}>
+                  {ethBalance ?? "—"} ETH
+                </div>
               </div>
             </div>
             <div>
-              <Label style={{ marginBottom: 8 }}>Send ETH</Label>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                <input value={sendTo} onChange={e => setSendTo(e.target.value)} placeholder="0x... recipient"
-                  style={{ flex: 1, minWidth: 200, padding: "7px 10px", borderRadius: 8, fontSize: 11 }} />
-                <input value={sendAmt} onChange={e => setSendAmt(e.target.value)} placeholder="ETH amount"
-                  style={{ width: 100, padding: "7px 10px", borderRadius: 8, fontSize: 11 }} />
+              <Label style={{ marginBottom: SP.xs }}>Send ETH</Label>
+              <div style={{ display: "flex", gap: SP.xs, flexWrap: "wrap", alignItems: "center",
+                maxWidth: 560 }}>
+                <input value={sendTo} onChange={e => setSendTo(e.target.value)}
+                  placeholder="0x… recipient address"
+                  style={{ flex: 2, minWidth: 180, padding: "7px 10px", borderRadius: 6, fontSize: 10 }} />
+                <input value={sendAmt} onChange={e => setSendAmt(e.target.value)}
+                  placeholder="ETH amount"
+                  style={{ flex: 1, minWidth: 80, padding: "7px 10px", borderRadius: 6, fontSize: 10 }} />
                 <ActionBtn onClick={sendEth} disabled={sendBusy} color={T.orange}>
-                  {sendBusy ? "SENDING..." : "SEND"}
+                  {sendBusy ? "SENDING…" : "SEND"}
                 </ActionBtn>
               </div>
             </div>
-            {mmMsg && <div style={{ fontSize: 10, color: mmMsg.toLowerCase().includes("failed") || mmMsg.toLowerCase().includes("fill") ? T.red : T.green }}>{mmMsg}</div>}
+            {mmMsg && (
+              <InlineNotice type={mmMsg.toLowerCase().includes("failed") || mmMsg.toLowerCase().includes("fill") ? "error" : "ok"}>
+                {mmMsg}
+              </InlineNotice>
+            )}
           </div>
         )}
       </div>
 
-      <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: 16 }}>
-        <Label style={{ marginBottom: 10 }}>Vault</Label>
-        <div style={{ fontSize: 11, color: T.muted, marginBottom: 12 }}>
-          Move withdrawn profits into the vault. Vault funds are never re-risked.
-        </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
-          <select value={lockBot} onChange={e => setLockBot(e.target.value)}
-            style={{ padding: "7px 10px", borderRadius: 8, fontSize: 11 }}>
-            {bots.map(b => <option key={b.id} value={b.id}>{b.id} -- ${(b.total_withdrawn || 0).toFixed(2)} available</option>)}
-          </select>
-          <input value={lockAmt} onChange={e => setLockAmt(e.target.value)} placeholder="Amount to lock"
-            style={{ width: 120, padding: "7px 10px", borderRadius: 8, fontSize: 11 }} />
-          <ActionBtn onClick={lockToVault} color={T.yellow}>LOCK TO VAULT</ActionBtn>
-          {lockMsg && <span style={{ fontSize: 10, color: lockMsg.includes("Error") ? T.red : T.yellow }}>{lockMsg}</span>}
-        </div>
-        {bots.some(b => (b.vault || 0) > 0) && (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {bots.filter(b => (b.vault || 0) > 0).map(b => (
-              <div key={b.id} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0",
-                borderBottom: `1px solid ${T.line}44`, fontSize: 11 }}>
-                <span style={{ color: b.color, fontWeight: 700 }}>{b.id}</span>
-                <span style={{ color: T.yellow, fontWeight: 800 }}>${(b.vault || 0).toFixed(4)}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: 16 }}>
-        <Label style={{ marginBottom: 10 }}>Withdraw Profits</Label>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <select value={wdBotId} onChange={e => setWdBotId(e.target.value)}
-            style={{ padding: "7px 10px", borderRadius: 8, fontSize: 11 }}>
-            {bots.map(b => <option key={b.id} value={b.id}>{b.id} -- ${(b.total_withdrawn || 0).toFixed(2)} out</option>)}
-          </select>
-          <input value={wdAmount} onChange={e => setWdAmount(e.target.value)} placeholder="Amount"
-            style={{ width: 110, padding: "7px 10px", borderRadius: 8, fontSize: 11 }} />
-          <ActionBtn onClick={withdraw}>WITHDRAW</ActionBtn>
-          {wdMsg && <span style={{ fontSize: 11, color: wdMsg.startsWith("Error") ? T.red : T.green }}>{wdMsg}</span>}
-        </div>
-      </div>
-
-      <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: 16 }}>
-        <Label style={{ marginBottom: 10 }}>Send Money</Label>
-        <div style={{ fontSize: 11, color: T.muted, marginBottom: 12, lineHeight: 1.6 }}>
-          Send via Interac, PayPal, or Wise. Requires API keys in Settings.
-        </div>
-        <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-          {[["interac","Interac e-Transfer"],["paypal","PayPal"],["wise","Wise"]].map(([id, l]) => (
+      {/* ── SECTION D: External Transfer — placeholder section ── */}
+      <div style={{ borderTop: `1px solid rgba(255,143,90,0.2)`, paddingTop: SP.lg }}>
+        <SectionHeader style={{ borderColor: "rgba(255,143,90,0.15)" }}>
+          External — Interac / PayPal / Wise
+        </SectionHeader>
+        <InlineNotice type="warn" style={{ marginBottom: SP.md }}>
+          Requires platform API keys configured in Settings. Currently a placeholder — no real transfer will be sent.
+        </InlineNotice>
+        <div style={{ display: "flex", gap: SP.xs, marginBottom: SP.sm, flexWrap: "wrap" }}>
+          {[["interac","Interac"], ["paypal","PayPal"], ["wise","Wise"]].map(([id, l]) => (
             <Chip key={id} active={xferMethod === id} onClick={() => setXferMethod(id)}>{l}</Chip>
           ))}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 420 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: SP.xs, maxWidth: 400 }}>
           <input value={xferTo} onChange={e => setXferTo(e.target.value)}
             placeholder={xferMethod === "interac" ? "Email or phone" : xferMethod === "wise" ? "Email / IBAN / SWIFT" : "PayPal email"}
-            style={{ padding: "7px 10px", borderRadius: 8, fontSize: 11 }} />
-          <input value={xferAmt} onChange={e => setXferAmt(e.target.value)} placeholder="Amount (USD)"
-            style={{ padding: "7px 10px", borderRadius: 8, fontSize: 11 }} />
-          <input value={xferNote} onChange={e => setXferNote(e.target.value)} placeholder="Note (optional)"
-            style={{ padding: "7px 10px", borderRadius: 8, fontSize: 11 }} />
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <ActionBtn onClick={sendTransfer}>SEND {xferMethod.toUpperCase()}</ActionBtn>
+            style={{ padding: "7px 10px", borderRadius: 6, fontSize: 10 }} />
+          <input value={xferAmt} onChange={e => setXferAmt(e.target.value)}
+            placeholder="Amount (USD)"
+            style={{ padding: "7px 10px", borderRadius: 6, fontSize: 10 }} />
+          <input value={xferNote} onChange={e => setXferNote(e.target.value)}
+            placeholder="Note (optional)"
+            style={{ padding: "7px 10px", borderRadius: 6, fontSize: 10 }} />
+          <div style={{ display: "flex", gap: SP.xs, alignItems: "center" }}>
+            <ActionBtn onClick={sendTransfer} color={T.orange}>
+              SEND {xferMethod.toUpperCase()}
+            </ActionBtn>
             {xferMsg && <span style={{ fontSize: 10, color: T.muted }}>{xferMsg}</span>}
           </div>
         </div>
       </div>
 
-      {txs.length > 0 && (
-        <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: 14 }}>
-          <Label style={{ marginBottom: 10 }}>Transaction Log</Label>
+      {/* ── SECTION E: Transaction History ── */}
+      {txs.length > 0 ? (
+        <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: SP.md }}>
+          <SectionHeader right={`${txs.length} entries`}>Transaction Log</SectionHeader>
           <div style={{ display: "flex", flexDirection: "column" }}>
             {txs.map((tx, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "8px 0", borderBottom: `1px solid ${T.line}44`, fontSize: 11 }}>
-                <span style={{ color: T.muted, fontSize: 9 }}>{tx.ts?.slice(0,16).replace("T"," ")}</span>
-                <span style={{ color: T.muted }}>{tx.bot_id}</span>
-                <span style={{ color: tx.type === "withdraw" ? T.yellow : T.green, fontWeight: 700 }}>
-                  {tx.type === "withdraw" ? "-" : "+"}${tx.amount?.toFixed(2)}
+              <div key={i} className="dg-row-hover" style={{
+                display: "grid",
+                gridTemplateColumns: "120px 100px 1fr 80px",
+                gap: SP.sm, alignItems: "center",
+                padding: "7px 0",
+                borderBottom: `1px solid ${T.line}28`, fontSize: 10 }}>
+                <span style={{ color: T.muted, fontSize: 9, fontFamily: "ui-monospace, monospace" }}>
+                  {tx.ts?.slice(0,16).replace("T"," ")}
                 </span>
-                <span style={{ fontSize: 9, color: T.muted }}>{tx.type?.toUpperCase()}</span>
+                <span style={{ color: BC[tx.bot_id] || T.muted, fontWeight: 600 }}>{tx.bot_id}</span>
+                <span style={{ color: tx.type === "withdraw" ? T.yellow : T.green, fontWeight: 700 }}>
+                  {tx.type === "withdraw" ? "−" : "+"}${tx.amount?.toFixed(2)}
+                </span>
+                <span style={{ fontSize: 8, color: T.muted, letterSpacing: "0.08em",
+                  textAlign: "right" }}>{tx.type?.toUpperCase()}</span>
               </div>
             ))}
           </div>
+        </div>
+      ) : (
+        <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: SP.md }}>
+          <SectionHeader>Transaction Log</SectionHeader>
+          <EmptyState message="No transactions recorded yet." />
         </div>
       )}
     </div>
@@ -2337,35 +2722,31 @@ function SettingsTab({ token, tz, onTzChange }) {
   const credColor = credScore >= 80 ? T.green : credScore >= 40 ? T.yellow : T.red;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 760, animation: "fadein .25s ease" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: SP.xl, maxWidth: 760, animation: "fadein .25s ease" }}>
 
-      {/* ── Connection score ── */}
-      <div style={{ background: `${credColor}0d`, border: `1px solid ${credColor}33`,
-        borderRadius: 10, padding: "14px 16px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <span style={{ fontSize: 12, fontWeight: 800, color: credColor, letterSpacing: "0.04em" }}>
-            CONNECTIONS — {credScore}% ACTIVE
-          </span>
-          <span style={{ fontSize: 10, color: T.muted }}>
-            {credScore >= 80 ? "Ready to print" : credScore >= 30 ? "Partially connected" : "Not connected"}
-          </span>
-        </div>
-        {/* Progress bar */}
-        <div style={{ height: 4, borderRadius: 2, background: T.line, overflow: "hidden", marginBottom: 12 }}>
+      {/* ── Connection Health ── clean checklist, not a score gimmick ── */}
+      <div>
+        <SectionHeader right={`${credScore}% connected`}>Connection Health</SectionHeader>
+        <div style={{ height: 3, borderRadius: 2, background: T.line, overflow: "hidden",
+          marginBottom: SP.md }}>
           <div style={{ height: "100%", width: `${credScore}%`, background: credColor,
             borderRadius: 2, transition: "width 0.4s ease" }} />
         </div>
-        {/* Per-credential checklist */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px 16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px 20px" }}>
           {CRED_CHECKS.map(c => {
             const filled = c.isAuto ? Boolean(polyWallet?.address) : Boolean(fields[c.key]);
             return (
-              <div key={c.key} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 10 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                  background: filled ? T.green : T.line }} />
-                <span style={{ color: filled ? T.fg : T.muted }}>{c.label}</span>
-                <span style={{ marginLeft: "auto", color: filled ? T.green : T.muted, fontWeight: 700 }}>
-                  {filled ? `+${c.pct}%` : `+${c.pct}%`}
+              <div key={c.key} style={{ display: "flex", alignItems: "center", gap: SP.sm,
+                padding: "5px 0", borderBottom: `1px solid ${T.line}22` }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
+                  background: filled ? T.green : T.line,
+                  boxShadow: filled ? `0 0 6px ${T.green}55` : "none" }} />
+                <span style={{ flex: 1, fontSize: 10, color: filled ? T.fg : T.muted }}>
+                  {c.label}
+                </span>
+                <span style={{ fontSize: 9, fontWeight: 700,
+                  color: filled ? T.green : T.muted }}>
+                  {filled ? "connected" : "missing"}
                 </span>
               </div>
             );
@@ -2373,30 +2754,29 @@ function SettingsTab({ token, tz, onTzChange }) {
         </div>
       </div>
 
-      {/* ── Timezone ── */}
-      <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: 16 }}>
-        <Label style={{ marginBottom: 14 }}>Clock &amp; Timezone</Label>
-        <div style={{ fontSize: 11, color: T.muted, marginBottom: 12 }}>
-          Shown in the top-right corner of the dashboard. Default: Calgary.
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
+      {/* ── Timezone — demoted to a compact utility row ── */}
+      <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: SP.md }}>
+        <SectionHeader>Clock & Timezone</SectionHeader>
+        <div style={{ display: "flex", gap: SP.xs, flexWrap: "wrap", alignItems: "center",
+          marginBottom: SP.sm }}>
           {TIMEZONES.map(({ label, tz: z }) => (
-            <button key={z} onClick={() => onTzChange(z)}
+            <button key={z} onClick={() => onTzChange(z)} className="dg-chip"
               style={{
-                padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
+                padding: "4px 9px", borderRadius: 5, fontSize: 9, fontWeight: 600,
                 cursor: "pointer", letterSpacing: "0.04em",
-                background: tz === z ? T.blue + "22" : "transparent",
-                border: `1px solid ${tz === z ? T.blue : T.line}`,
+                background: tz === z ? `${T.blue}18` : "transparent",
+                border: `1px solid ${tz === z ? T.blue + "55" : T.line}`,
                 color: tz === z ? T.blue : T.muted,
+                transition: "all .15s",
               }}>
               {label}
             </button>
           ))}
         </div>
-        <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "ui-monospace, monospace",
-          color: T.fg, letterSpacing: "0.04em" }}>
+        <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "ui-monospace, monospace",
+          color: T.fg, letterSpacing: "0.04em", display: "flex", alignItems: "baseline", gap: 10 }}>
           {clockPreview.time}
-          <span style={{ fontSize: 11, color: T.muted, fontWeight: 400, marginLeft: 10 }}>
+          <span style={{ fontSize: 9, color: T.muted, fontWeight: 400, letterSpacing: "0.08em" }}>
             {clockPreview.date} · {clockPreview.city}
           </span>
         </div>
@@ -2485,59 +2865,73 @@ function SettingsTab({ token, tz, onTzChange }) {
       </div>
 
       {GROUPS.map(g => (
-        <div key={g.title} style={{ borderTop: `1px solid ${T.line}`, paddingTop: 16 }}>
-          <Label style={{ marginBottom: 6 }}>{g.title}</Label>
+        <div key={g.title} style={{ borderTop: `1px solid ${T.line}`, paddingTop: SP.md }}>
+          <SectionHeader>{g.title}</SectionHeader>
           {g.note && (
-            <div style={{ fontSize: 10, color: T.muted, marginBottom: 12, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: SP.sm, lineHeight: 1.7,
+              paddingLeft: SP.xs, borderLeft: `2px solid ${T.line}` }}>
               {g.note}
             </div>
           )}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {g.keys.map(([key, label, secret, link, lifetime]) => (
-              <div key={key}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {link ? (
-                      <a href={link} target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: 11, fontWeight: 700, color: T.blue,
-                          textDecoration: "none", borderBottom: `1px dotted ${T.blue}44` }}>
-                        {label} ↗
-                      </a>
-                    ) : (
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.muted }}>{label}</span>
-                    )}
-                    {lifetime === "permanent" && (
-                      <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.1em",
-                        padding: "2px 6px", borderRadius: 4,
-                        background: `${T.green}18`, color: T.green }}>
-                        PERMANENT
+          <div style={{ display: "flex", flexDirection: "column", gap: SP.md }}>
+            {g.keys.map(([key, label, secret, link, lifetime]) => {
+              const isFilled = Boolean(fields[key]);
+              return (
+                <div key={key}>
+                  <div style={{ display: "flex", justifyContent: "space-between",
+                    alignItems: "center", marginBottom: SP.xs }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: SP.sm }}>
+                      {link ? (
+                        <a href={link} target="_blank" rel="noopener noreferrer"
+                          style={{ fontSize: 10, fontWeight: 700, color: T.blue,
+                            textDecoration: "none", borderBottom: `1px dotted ${T.blue}44` }}>
+                          {label} ↗
+                        </a>
+                      ) : (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: T.muted }}>{label}</span>
+                      )}
+                      {lifetime === "permanent" && (
+                        <span style={{ fontSize: 7, fontWeight: 800, letterSpacing: "0.1em",
+                          padding: "2px 5px", borderRadius: 3,
+                          background: `${T.green}14`, color: T.green }}>
+                          PERM
+                        </span>
+                      )}
+                      {lifetime === "session" && (
+                        <span style={{ fontSize: 7, fontWeight: 800, letterSpacing: "0.1em",
+                          padding: "2px 5px", borderRadius: 3,
+                          background: `${T.yellow}14`, color: T.yellow }}>
+                          SESSION
+                        </span>
+                      )}
+                      {/* Connection indicator */}
+                      <span style={{ fontSize: 8, color: isFilled ? T.green : T.muted,
+                        fontWeight: 600 }}>
+                        {isFilled ? "✓" : "—"}
                       </span>
-                    )}
-                    {lifetime === "session" && (
-                      <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.1em",
-                        padding: "2px 6px", borderRadius: 4,
-                        background: `${T.yellow}18`, color: T.yellow }}>
-                        SESSION
-                      </span>
+                    </div>
+                    {secret && (
+                      <button onClick={() => setShow(p => ({ ...p, [key]: !p[key] }))}
+                        style={{ background: "none", border: "none", fontSize: 8,
+                          color: T.muted, cursor: "pointer", letterSpacing: "0.1em",
+                          fontFamily: T.font }}>
+                        {show[key] ? "HIDE" : "REVEAL"}
+                      </button>
                     )}
                   </div>
-                  {secret && (
-                    <button onClick={() => setShow(p => ({ ...p, [key]: !p[key] }))}
-                      style={{ background: "none", border: "none", fontSize: 9,
-                        color: T.muted, cursor: "pointer", letterSpacing: "0.1em" }}>
-                      {show[key] ? "HIDE" : "SHOW"}
-                    </button>
-                  )}
+                  <div style={{ display: "flex", gap: SP.xs }}>
+                    <input type={secret && !show[key] ? "password" : "text"}
+                      value={fields[key] || ""} placeholder="paste here"
+                      onChange={e => setFields(p => ({ ...p, [key]: e.target.value }))}
+                      style={{ flex: 1, padding: "7px 10px", borderRadius: 6, fontSize: 10,
+                        borderColor: isFilled ? `${T.green}33` : T.line }} />
+                    <Chip onClick={() => save(key)} style={{ minWidth: 52, justifyContent: "center" }}>
+                      {saving[key] ? <Spinner size={9} /> : "SAVE"}
+                    </Chip>
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input type={secret && !show[key] ? "password" : "text"}
-                    value={fields[key] || ""} placeholder="paste here"
-                    onChange={e => setFields(p => ({ ...p, [key]: e.target.value }))}
-                    style={{ flex: 1, padding: "8px 10px", borderRadius: 8, fontSize: 11 }} />
-                  <Chip onClick={() => save(key)}>{saving[key] ? <Spinner size={10} /> : "SAVE"}</Chip>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}
@@ -3103,40 +3497,113 @@ A: F12 → Network tab → place a Dice bet → click the request "_api/graphql"
   },
 ];
 
+// First 2 sections shown inline; rest in accordions
+const GUIDE_INLINE_COUNT = 2;
+
 function GuideTab() {
   const [open, setOpen] = useState(null);
+  const [activeSection, setActiveSection] = useState(null);
+  const sectionRefs = useRef({});
+
+  const scrollTo = (i) => {
+    setActiveSection(i);
+    const el = sectionRefs.current[i];
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const inlineSections = GUIDE_SECTIONS.slice(0, GUIDE_INLINE_COUNT);
+  const accordionSections = GUIDE_SECTIONS.slice(GUIDE_INLINE_COUNT);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 780, animation: "fadein .25s ease" }}>
-      <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.04em", color: T.fg, marginBottom: 6 }}>
-          DeG£N$ — Full Guide
-        </div>
-        <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.6 }}>
-          Everything you need to go from zero to running bots. Click any section to expand it.
+    <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: SP.xl,
+      maxWidth: 940, animation: "fadein .25s ease", alignItems: "start" }}>
+
+      {/* ── Left: Table of Contents ── */}
+      <div style={{ position: "sticky", top: 0 }}>
+        <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.16em", color: T.muted,
+          textTransform: "uppercase", marginBottom: SP.sm }}>Contents</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {GUIDE_SECTIONS.map((s, i) => (
+            <button key={i} onClick={() => scrollTo(i)} className="dg-nav-btn"
+              style={{ background: "none", border: "none", padding: "4px 0",
+                textAlign: "left", cursor: "pointer",
+                fontSize: 10, fontWeight: activeSection === i ? 700 : 400,
+                color: activeSection === i ? T.fg : T.muted,
+                borderLeft: `2px solid ${activeSection === i ? T.blue : "transparent"}`,
+                paddingLeft: SP.sm, transition: "color .15s",
+                lineHeight: 1.5 }}>
+              {i < GUIDE_INLINE_COUNT ? "★ " : ""}{s.title.replace(/^Step \d+ — /, "")}
+            </button>
+          ))}
         </div>
       </div>
-      {GUIDE_SECTIONS.map((s, i) => {
-        const isOpen = open === i;
-        return (
-          <div key={i} style={{ border: `1px solid ${isOpen ? T.blue + "55" : T.line}`, borderRadius: 10,
-            background: isOpen ? "rgba(94,161,255,0.04)" : T.card, overflow: "hidden",
-            transition: "border-color .2s" }}>
-            <button onClick={() => setOpen(isOpen ? null : i)}
-              style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "14px 16px",
-                background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: isOpen ? T.blue : T.fg,
-                letterSpacing: "-0.02em" }}>{s.title}</span>
-              <span style={{ fontSize: 11, color: T.muted, marginLeft: "auto" }}>{isOpen ? "▲" : "▼"}</span>
-            </button>
-            {isOpen && (
-              <div style={{ padding: "0 16px 18px", fontSize: 11.5, color: T.fg, lineHeight: 1.85,
-                whiteSpace: "pre-wrap", borderTop: `1px solid ${T.line}`, paddingTop: 14, fontFamily: "inherit" }}>
+
+      {/* ── Right: Content ── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: SP.xl }}>
+
+        {/* Quick Start — shown inline without clicking */}
+        <div>
+          <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.16em", color: T.blue,
+            textTransform: "uppercase", marginBottom: SP.sm }}>
+            Quick Start
+          </div>
+          {inlineSections.map((s, i) => (
+            <div key={i} ref={el => sectionRefs.current[i] = el}
+              style={{ marginBottom: SP.lg, paddingBottom: SP.lg,
+                borderBottom: `1px solid ${T.line}` }}>
+              <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em",
+                color: T.fg, marginBottom: SP.sm }}>
+                {s.title}
+              </div>
+              <div style={{ fontSize: 11, color: T.fg, lineHeight: 1.85,
+                whiteSpace: "pre-wrap" }}>
                 {s.body}
               </div>
-            )}
+            </div>
+          ))}
+        </div>
+
+        {/* Reference sections — accordion */}
+        <div>
+          <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.16em", color: T.muted,
+            textTransform: "uppercase", marginBottom: SP.sm }}>
+            Reference
           </div>
-        );
-      })}
+          <div style={{ display: "flex", flexDirection: "column", gap: SP.xs }}>
+            {accordionSections.map((s, idx) => {
+              const i = idx + GUIDE_INLINE_COUNT;
+              const isOpen = open === i;
+              return (
+                <div key={i} ref={el => sectionRefs.current[i] = el}
+                  style={{ border: `1px solid ${isOpen ? T.blue + "44" : T.line}`,
+                    borderRadius: 8, overflow: "hidden",
+                    transition: "border-color .2s",
+                    background: isOpen ? "rgba(94,161,255,0.03)" : "transparent" }}>
+                  <button onClick={() => setOpen(isOpen ? null : i)}
+                    style={{ width: "100%", display: "flex", alignItems: "center",
+                      gap: SP.sm, padding: "12px 14px",
+                      background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
+                    <span style={{ flex: 1, fontSize: 11, fontWeight: 700,
+                      color: isOpen ? T.blue : T.fg, letterSpacing: "-0.01em" }}>
+                      {s.title}
+                    </span>
+                    <span style={{ fontSize: 9, color: T.muted, transition: "transform .2s",
+                      display: "inline-block",
+                      transform: isOpen ? "rotate(180deg)" : "none" }}>▼</span>
+                  </button>
+                  {isOpen && (
+                    <div style={{ padding: "0 14px 16px", fontSize: 11, color: T.fg,
+                      lineHeight: 1.85, whiteSpace: "pre-wrap",
+                      borderTop: `1px solid ${T.line}`, paddingTop: SP.sm }}>
+                      {s.body}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -3168,6 +3635,8 @@ function Dashboard({ token, onLogout, theme, onToggleTheme }) {
   const [toggleBusy,     setToggleBusy]     = useState(false);
   const [wsConnected,    setWsConnected]    = useState(false);
   const [tz,             setTzState]        = useState(getTz);
+  const [botFilter,      setBotFilter]      = useState("all");
+  const [expandedBots,   setExpandedBots]   = useState({});
   const [playOpen,       setPlayOpen]       = useState(false);
   const [selectedBots,   setSelectedBots]   = useState(() => {
     try { return JSON.parse(localStorage.getItem("degens_selected_bots") || "null") || null; }
@@ -3434,90 +3903,117 @@ function Dashboard({ token, onLogout, theme, onToggleTheme }) {
         </div>
       )}
 
-      <header style={{ padding: "12px 14px 0", flexShrink: 0 }}>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "auto 1fr auto",
-          alignItems: "start", marginBottom: 14, gap: isMobile ? 12 : 0 }}>
+      <header style={{ padding: "14px 18px 0", flexShrink: 0, borderBottom: `1px solid ${T.line}` }}>
+        {/* ── Top row: brand · nav · clock+actions ── */}
+        <div style={{ display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "200px 1fr 260px",
+          alignItems: "center", gap: isMobile ? 10 : 0, marginBottom: 12 }}>
+
+          {/* LEFT — brand + system status */}
           <div>
             <button onClick={onToggleTheme}
               style={{ background: "none", border: "none", padding: 0, color: T.fg,
-                fontSize: 36, fontWeight: 800, letterSpacing: "-0.08em", lineHeight: 0.9 }}>
+                fontSize: 32, fontWeight: 800, letterSpacing: "-0.08em", lineHeight: 1,
+                display: "flex", alignItems: "baseline", gap: 6 }}>
               DeG£N$
-              <span style={{ fontSize: 12, color: T.muted, verticalAlign: "super", marginLeft: 6, letterSpacing: "0.18em" }}>
-                {theme === "dark" ? "L" : "D"}
+              <span style={{ fontSize: 9, color: T.muted, letterSpacing: "0.18em", fontWeight: 500 }}>
+                {theme === "dark" ? "LIGHT" : "DARK"}
               </span>
             </button>
-            <div style={{ marginTop: 6, fontSize: 11, color: T.muted, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <span><Dot ok={active > 0} size={6} />&nbsp;&nbsp;{uptime}</span>
-              <span>CYCLE {cycle.toLocaleString()}</span>
-              <span>{active}/{bots.length} ACTIVE</span>
-              {wsConnected && <span style={{ fontSize: 9, color: T.green, fontWeight: 700 }}>WS</span>}
-              {danger > 0 && <span style={{ color: T.red, animation: "pulse 1.5s infinite" }}>{danger} DANGER</span>}
+            {/* System status line — compact, scannable */}
+            <div style={{ marginTop: 5, display: "flex", gap: 10, alignItems: "center",
+              fontSize: 9, color: T.muted, letterSpacing: "0.06em", flexWrap: "wrap" }}>
+              <span style={{ display:"flex", alignItems:"center", gap: 4 }}>
+                <Dot ok={active > 0} size={5} />
+                <span>{active}/{bots.length}</span>
+              </span>
+              <span>{uptime}</span>
+              {wsConnected && (
+                <span style={{ color: T.green, fontWeight: 700, letterSpacing: "0.1em" }}>WS</span>
+              )}
               {bots.length > 0 && (
                 <span style={{
-                  fontSize: 8, fontWeight: 700, padding: "2px 6px", borderRadius: 4,
-                  background: `${weakestColor}22`, color: weakestColor, letterSpacing: "0.06em",
+                  fontSize: 8, fontWeight: 800, padding: "1px 5px", borderRadius: 3,
+                  background: `${weakestColor}1a`, color: weakestColor, letterSpacing: "0.06em",
                   animation: weakestPhase === "turbo" ? "turbo-pulse 1.2s infinite" : "none",
                 }}>
-                  SYS: {(weakestPhase || "normal").toUpperCase()}
+                  {(weakestPhase || "normal").toUpperCase()}
+                </span>
+              )}
+              {danger > 0 && (
+                <span style={{ color: T.red, fontWeight: 800, animation: "pulse 1.5s infinite",
+                  fontSize: 9 }}>
+                  {danger}⚠
                 </span>
               )}
             </div>
           </div>
 
-          <nav style={{ display: "flex", gap: 14, justifyContent: isMobile ? "flex-start" : "center",
-            alignItems: "center", flexWrap: "wrap", paddingTop: 6, fontSize: 12, fontWeight: 700 }}>
+          {/* CENTER — navigation */}
+          <nav style={{ display: "flex", gap: isMobile ? 10 : 20,
+            justifyContent: isMobile ? "flex-start" : "center",
+            alignItems: "center", flexWrap: "wrap" }}>
             {TABS_DEF.map(([id]) => (
-              <button key={id} onClick={() => setTab(id)}
-                style={{ background: "none", border: "none", padding: 0,
+              <button key={id} onClick={() => setTab(id)} className="dg-nav-btn"
+                style={{ background: "none", border: "none", padding: "0 0 2px",
                   color: tab === id ? T.fg : T.muted,
-                  fontSize: 12, fontWeight: 700, cursor: "pointer",
-                  borderBottom: tab === id ? `1px solid ${T.fg}` : "1px solid transparent",
-                  paddingBottom: 2 }}>
+                  fontSize: 11, fontWeight: tab === id ? 800 : 500,
+                  cursor: "pointer", letterSpacing: "0.06em",
+                  borderBottom: tab === id ? `1.5px solid ${T.fg}` : "1.5px solid transparent",
+                  transition: "color .15s, border-color .15s" }}>
                 {id}
               </button>
             ))}
           </nav>
 
-          <div style={{ paddingTop: 6, textAlign: isMobile ? "left" : "right" }}>
+          {/* RIGHT — clock + goal + actions */}
+          <div style={{ display: "flex", flexDirection: "column",
+            alignItems: isMobile ? "flex-start" : "flex-end", gap: SP.sm }}>
             {/* Clock */}
-            <div style={{ fontFamily: "ui-monospace, monospace", lineHeight: 1.2, marginBottom: 8 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: T.fg, letterSpacing: "0.04em" }}>
+            <div style={{ fontFamily: "ui-monospace, monospace", lineHeight: 1.15,
+              textAlign: isMobile ? "left" : "right" }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: T.fg, letterSpacing: "0.04em" }}>
                 {clock.time}
               </div>
-              <div style={{ fontSize: 10, color: T.muted, letterSpacing: "0.08em" }}>
+              <div style={{ fontSize: 9, color: T.muted, letterSpacing: "0.1em" }}>
                 {clock.date} · {clock.city}
               </div>
             </div>
-
-            {/* PLAY + PAUSE SYSTEM controls */}
-            <div style={{ display: "flex", gap: 8, justifyContent: isMobile ? "flex-start" : "flex-end",
-              alignItems: "center", flexWrap: "wrap" }}>
+            {/* Action row */}
+            <div style={{ display: "flex", gap: SP.sm, alignItems: "center", flexWrap: "wrap",
+              justifyContent: isMobile ? "flex-start" : "flex-end" }}>
               <NotificationBell notifications={notifications} onClear={() => setNotifications([])} />
-              <span style={{ fontSize: 11, fontWeight: 800, color: T.green }}>{info?.goalPct || 0}% of goal</span>
+              {(info?.goalPct || 0) > 0 && (
+                <span style={{ fontSize: 9, fontWeight: 700, color: T.green,
+                  letterSpacing: "0.08em" }}>
+                  {(+(info?.goalPct || 0)).toFixed(1)}% GOAL
+                </span>
+              )}
 
               {/* PLAY button with dropdown */}
               <div ref={playRef} style={{ position: "relative" }}>
                 <button onClick={() => setPlayOpen(p => !p)} disabled={toggleBusy}
-                  style={{ display: "flex", alignItems: "center", gap: 6,
-                    background: "rgba(89,212,122,0.08)", border: "1px solid rgba(89,212,122,0.35)",
-                    color: toggleBusy ? T.muted : T.green, padding: "6px 12px",
-                    borderRadius: 8, fontSize: 10, fontWeight: 800, letterSpacing: "0.12em",
+                  className="dg-btn"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 5,
+                    background: "rgba(89,212,122,0.08)", border: "1px solid rgba(89,212,122,0.32)",
+                    color: toggleBusy ? T.muted : T.green, padding: "5px 11px",
+                    borderRadius: 6, fontSize: 9, fontWeight: 800, letterSpacing: "0.12em",
                     cursor: toggleBusy ? "not-allowed" : "pointer" }}>
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> PLAY
-                  <span style={{ fontSize: 8, opacity: 0.7 }}>
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  PLAY
+                  <span style={{ fontSize: 8, opacity: 0.65 }}>
                     {effectiveSelected.length === allBotIds.length || allBotIds.length === 0
-                      ? "ALL" : `${effectiveSelected.length}`} ▾
+                      ? "ALL" : `${effectiveSelected.length}`}▾
                   </span>
                 </button>
 
                 {playOpen && (
                   <div style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 200,
-                    background: T.bg === "#000000" ? "#0d0d0d" : "#1a1a1a",
-                    border: `1px solid ${T.line}`, borderRadius: 10, padding: "10px 0",
-                    minWidth: 220, boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
-                    {/* Select all / none */}
-                    <div style={{ display: "flex", gap: 8, padding: "0 12px 8px",
-                      borderBottom: `1px solid ${T.line}`, marginBottom: 6 }}>
+                    background: T.bg === "#000000" ? "#0d0d0d" : "#f5f5f5",
+                    border: `1px solid ${T.line}`, borderRadius: 8, padding: "8px 0",
+                    minWidth: 210, boxShadow: "0 8px 24px rgba(0,0,0,0.55)" }}>
+                    <div style={{ display: "flex", gap: 8, padding: "0 12px 7px",
+                      borderBottom: `1px solid ${T.line}`, marginBottom: 4 }}>
                       <button onClick={selectAll}
                         style={{ fontSize: 9, color: T.blue, background: "none", border: "none",
                           cursor: "pointer", fontWeight: 700, letterSpacing: "0.08em" }}>ALL</button>
@@ -3525,8 +4021,6 @@ function Dashboard({ token, onLogout, theme, onToggleTheme }) {
                         style={{ fontSize: 9, color: T.muted, background: "none", border: "none",
                           cursor: "pointer", fontWeight: 700, letterSpacing: "0.08em" }}>NONE</button>
                     </div>
-
-                    {/* Bot list */}
                     {(bots.length ? bots : [
                       {id:"bot1_dice",platform:"stake"},{id:"bot2_limbo",platform:"stake"},
                       {id:"bot3_mines",platform:"stake"},{id:"bot4_poly",platform:"poly"},
@@ -3537,33 +4031,31 @@ function Dashboard({ token, onLogout, theme, onToggleTheme }) {
                       const on = effectiveSelected.includes(b.id);
                       const col = getBotColor(b.id);
                       return (
-                        <div key={b.id} onClick={() => toggleBotSelect(b.id)}
-                          style={{ display: "flex", alignItems: "center", gap: 10,
-                            padding: "7px 12px", cursor: "pointer",
-                            background: on ? `${col}11` : "transparent",
-                            transition: "background 0.15s" }}>
-                          <div style={{ width: 12, height: 12, borderRadius: 3,
+                        <div key={b.id} onClick={() => toggleBotSelect(b.id)} className="dg-row-hover"
+                          style={{ display: "flex", alignItems: "center", gap: 9,
+                            padding: "6px 12px", cursor: "pointer",
+                            background: on ? `${col}0d` : "transparent",
+                            transition: "background 0.12s" }}>
+                          <div style={{ width: 10, height: 10, borderRadius: 2,
                             border: `1.5px solid ${on ? col : T.muted}`,
                             background: on ? col : "transparent",
-                            flexShrink: 0, transition: "all 0.15s" }} />
-                          <span style={{ fontSize: 11, color: on ? col : T.muted, fontWeight: 700,
-                            flex: 1, letterSpacing: "0.02em" }}>{b.id}</span>
-                          <span style={{ fontSize: 9, color: T.muted }}>
+                            flexShrink: 0, transition: "all 0.12s" }} />
+                          <span style={{ fontSize: 10, color: on ? col : T.muted, fontWeight: 600,
+                            flex: 1 }}>{b.id}</span>
+                          <span style={{ fontSize: 8, color: T.muted, letterSpacing: "0.06em" }}>
                             {(b.platform || "").toUpperCase()}
                           </span>
                         </div>
                       );
                     })}
-
-                    {/* Play selected */}
-                    <div style={{ padding: "8px 12px 0", borderTop: `1px solid ${T.line}`, marginTop: 6 }}>
+                    <div style={{ padding: "7px 10px 0", borderTop: `1px solid ${T.line}`, marginTop: 4 }}>
                       <button onClick={playSelected} disabled={toggleBusy || effectiveSelected.length === 0}
-                        style={{ width: "100%", padding: "8px 0", borderRadius: 8,
-                          background: effectiveSelected.length === 0 ? "transparent" : "rgba(89,212,122,0.12)",
-                          border: `1px solid ${effectiveSelected.length === 0 ? T.line : "rgba(89,212,122,0.4)"}`,
+                        style={{ width: "100%", padding: "7px 0", borderRadius: 6,
+                          background: effectiveSelected.length === 0 ? "transparent" : "rgba(89,212,122,0.10)",
+                          border: `1px solid ${effectiveSelected.length === 0 ? T.line : "rgba(89,212,122,0.38)"}`,
                           color: effectiveSelected.length === 0 ? T.muted : T.green,
-                          fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", cursor: "pointer" }}>
-                        {toggleBusy ? "STARTING..." : <><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" style={{verticalAlign:"middle",marginRight:4}}><path d="M8 5v14l11-7z"/></svg>{`PLAY ${effectiveSelected.length === allBotIds.length ? "ALL" : effectiveSelected.length} BOT${effectiveSelected.length !== 1 ? "S" : ""}`}</>}
+                          fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", cursor: "pointer" }}>
+                        {toggleBusy ? "STARTING…" : `▶ PLAY ${effectiveSelected.length === allBotIds.length ? "ALL" : effectiveSelected.length} BOT${effectiveSelected.length !== 1 ? "S" : ""}`}
                       </button>
                     </div>
                   </div>
@@ -3571,12 +4063,14 @@ function Dashboard({ token, onLogout, theme, onToggleTheme }) {
               </div>
 
               {/* PAUSE SYSTEM */}
-              <button onClick={pauseSystem} disabled={toggleBusy}
-                style={{ background: "rgba(239,95,87,0.08)", border: "1px solid rgba(239,95,87,0.35)",
-                  color: toggleBusy ? T.muted : T.red, padding: "6px 12px",
-                  borderRadius: 8, fontSize: 10, fontWeight: 800, letterSpacing: "0.12em",
+              <button onClick={pauseSystem} disabled={toggleBusy} className="dg-btn"
+                style={{ display: "inline-flex", alignItems: "center", gap: 5,
+                  background: "rgba(239,95,87,0.07)", border: "1px solid rgba(239,95,87,0.28)",
+                  color: toggleBusy ? T.muted : T.red, padding: "5px 11px",
+                  borderRadius: 6, fontSize: 9, fontWeight: 800, letterSpacing: "0.12em",
                   cursor: toggleBusy ? "not-allowed" : "pointer" }}>
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" style={{verticalAlign:"middle",marginRight:4}}><rect x="6" y="6" width="12" height="12"/></svg> PAUSE SYSTEM
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>
+                PAUSE
               </button>
             </div>
           </div>
@@ -3587,7 +4081,7 @@ function Dashboard({ token, onLogout, theme, onToggleTheme }) {
 
       <main style={{ flex: 1, padding: "18px 14px 28px", overflowY: "auto" }}>
         {tab === "Overview"  && <OverviewTab bots={bots} equity={equity} info={info} historySummary={historySummary} token={token} />}
-        {tab === "Bots"      && <BotsTab token={token} bots={bots} equity={equity} />}
+        {tab === "Bots"      && <BotsTab token={token} bots={bots} equity={equity} botFilter={botFilter} setBotFilter={setBotFilter} expandedBots={expandedBots} setExpandedBots={setExpandedBots} />}
         {tab === "Analytics" && <AnalyticsTab token={token} bots={bots} equity={equity} />}
         {tab === "Wallet"    && <WalletTab token={token} bots={bots} />}
         {tab === "Settings"  && <SettingsTab token={token} tz={tz} onTzChange={setTz} />}
@@ -3632,7 +4126,7 @@ class ErrorBoundary extends Component {
 // ─────────────────────────────────────────────────────────────────────────────
 //  ROOT
 // ─────────────────────────────────────────────────────────────────────────────
-export default function SixBotCommandCenter() {
+export default function DegensDashboard() {
   const [theme, setTheme] = useState(getTheme);
   // Auto-clear stale token on load — if it's expired server will 401 and logout kicks in
   const [token, setToken] = useState(() => {

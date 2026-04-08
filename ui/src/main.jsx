@@ -1,9 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import SixBotCommandCenter from "./SixBotCommandCenter.jsx";
+import DegensDashboard from "./DegensDashboard.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <SixBotCommandCenter />
+    <DegensDashboard />
   </React.StrictMode>
 );
