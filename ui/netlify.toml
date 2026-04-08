@@ -1,0 +1,23 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+# Proxy all /api/* calls to the backend (Render)
+[[redirects]]
+  from = "/api/*"
+  to = "https://d3gns.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# WebSocket upgrade for /api/ws
+[[redirects]]
+  from = "/api/ws"
+  to = "https://d3gns.onrender.com/api/ws"
+  status = 101
+  force = true
+
+# SPA fallback — all routes serve index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

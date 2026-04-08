@@ -9,7 +9,49 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 const API      = "/api";
 const POLL_MS  = 2000;
+const DEMO_TOKEN = "__DEMO__";
 const ADMIN_VAULT_KEY = "degens_admin_vault_v1";
+
+// ─── Demo / offline mock data ────────────────────────────────────────────────
+const DEMO_BOTS = [
+  { id:"bot1_dice",    name:"Dice Alpha",    platform:"stake",  bankroll:187.42, start_amount:100, target_amount:500, floor_amount:40,  roi_pct:87.4,  winRate:64, bets:2140, wins:1370, losses:770,  phase:"normal",      streak:4,  vault:22,  total_withdrawn:18,  halted:false, danger:false, execution_mode:"live",      strategy_mode:"balanced",  progress_pct:24, milestoneHit:false },
+  { id:"bot2_limbo",   name:"Limbo Edge",    platform:"stake",  bankroll:134.80, start_amount:100, target_amount:500, floor_amount:40,  roi_pct:34.8,  winRate:58, bets:1820, wins:1056, losses:764,  phase:"careful",     streak:-2, vault:8,   total_withdrawn:0,   halted:false, danger:false, execution_mode:"live",      strategy_mode:"conservative", progress_pct:9, milestoneHit:false },
+  { id:"bot3_mines",   name:"Mines Runner",  platform:"stake",  bankroll:76.50,  start_amount:100, target_amount:500, floor_amount:40,  roi_pct:-23.5, winRate:44, bets:990,  wins:436,  losses:554,  phase:"floor",       streak:-8, vault:0,   total_withdrawn:0,   halted:false, danger:true,  execution_mode:"live",      strategy_mode:"aggressive", progress_pct:0, milestoneHit:false },
+  { id:"bot4_poly",    name:"Poly Scout",    platform:"poly",   bankroll:320.10, start_amount:200, target_amount:1000,floor_amount:80,  roi_pct:60.1,  winRate:71, bets:430,  wins:305,  losses:125,  phase:"turbo",       streak:11, vault:60,  total_withdrawn:40,  halted:false, danger:false, execution_mode:"paper",     strategy_mode:"aggressive", progress_pct:31, milestoneHit:true  },
+  { id:"bot5_poly",    name:"Poly Sniper",   platform:"poly",   bankroll:210.00, start_amount:200, target_amount:1000,floor_amount:80,  roi_pct:5.0,   winRate:55, bets:210,  wins:116,  losses:94,   phase:"normal",      streak:1,  vault:10,  total_withdrawn:0,   halted:false, danger:false, execution_mode:"paper",     strategy_mode:"balanced",  progress_pct:4, milestoneHit:false },
+  { id:"bot7_momentum",name:"Momentum BTC",  platform:"stake",  bankroll:450.00, start_amount:400, target_amount:2000,floor_amount:160, roi_pct:12.5,  winRate:61, bets:680,  wins:415,  losses:265,  phase:"safe",        streak:3,  vault:35,  total_withdrawn:10,  halted:false, danger:false, execution_mode:"simulated", strategy_mode:"balanced",  progress_pct:6, milestoneHit:false },
+];
+
+const _eq = (n, base, vol) => Array.from({length:30}, (_,i) => ({
+  t: `${i+1}`, equity: +(base + Math.sin(i*0.4)*vol + i*(vol/20) + (Math.random()-0.45)*vol*0.5).toFixed(2)
+}));
+
+const DEMO_EQUITY = [
+  ..._eq(0, 100,  25).map((p,i)=>({t:p.t, bot1:p.equity, bot2:_eq(1,100,15)[i].equity, bot3:_eq(2,100,35)[i].equity,
+     bot4:_eq(3,200,50)[i].equity, bot5:_eq(4,200,20)[i].equity, bot7:_eq(5,400,40)[i].equity, total:0}))
+].map(p=>({...p, total:+(p.bot1+p.bot2+p.bot3+p.bot4+p.bot5+p.bot7).toFixed(2)}));
+
+const DEMO_STATUS = {
+  running: true,
+  bots: DEMO_BOTS,
+};
+const DEMO_EQUITY_RESP  = { equity: DEMO_EQUITY };
+const DEMO_INFO         = { uptime: "14h 22m", version: "2.4.1", env: "demo" };
+const DEMO_HIST         = { total_bets:6270, total_wins:3698, overall_roi:28.4, best_bot:"bot4_poly", best_roi:60.1 };
+const DEMO_VAULT        = { total_vault: 135, breakdown: DEMO_BOTS.map(b=>({id:b.id,vault:b.vault})) };
+const DEMO_HISTORY      = { trades: Array.from({length:20},(_,i)=>({ id:i+1, bot_id: DEMO_BOTS[i%6].id, outcome: i%3===2?"loss":"win", amount: +(1+Math.random()*4).toFixed(2), profit: i%3===2 ? -(0.5+Math.random()*2).toFixed(2) : +(0.3+Math.random()*3).toFixed(2), ts: Date.now()-i*180000 })) };
+
+function demoFetch(path) {
+  if (path.includes("/status"))         return Promise.resolve(DEMO_STATUS);
+  if (path.includes("/equity"))         return Promise.resolve(DEMO_EQUITY_RESP);
+  if (path.includes("/info"))           return Promise.resolve(DEMO_INFO);
+  if (path.includes("/history/summary"))return Promise.resolve(DEMO_HIST);
+  if (path.includes("/vault"))          return Promise.resolve(DEMO_VAULT);
+  if (path.includes("/history"))        return Promise.resolve(DEMO_HISTORY);
+  if (path.includes("/volume-spikes"))  return Promise.resolve({ spikes: [] });
+  if (path.includes("/arbitrage"))      return Promise.resolve({ opportunities: [] });
+  return Promise.resolve({});
+}
 const THEME_KEY = "degens_theme_v1";
 const MILESTONE_DISMISS_KEY = "degens_milestone_dismiss_v1";
 const TZ_KEY   = "degens_timezone_v1";
@@ -813,10 +855,11 @@ function InlineNotice({ type="info", children, style }) {
 //  LOGIN
 // ─────────────────────────────────────────────────────────────────────────────
 function Login({ onLogin, theme, onToggleTheme }) {
-  const [pwd, setPwd]   = useState("");
-  const [show, setShow] = useState(false);
-  const [err, setErr]   = useState("");
-  const [busy, setBusy] = useState(false);
+  const [pwd, setPwd]       = useState("");
+  const [show, setShow]     = useState(false);
+  const [err, setErr]       = useState("");
+  const [busy, setBusy]     = useState(false);
+  const [serverDown, setServerDown] = useState(false);
 
   const submit = async () => {
     if (!pwd) { setErr("Enter password"); return; }
@@ -830,7 +873,7 @@ function Login({ onLogin, theme, onToggleTheme }) {
       if (d.ok) { storeToken(d.token); onLogin(d.token); }
       else if (d.pending) setErr(d.msg);
       else setErr("Wrong password.");
-    } catch { setErr("Cannot reach server."); }
+    } catch { setErr("Cannot reach server."); setServerDown(true); }
     setBusy(false);
   };
 
@@ -869,6 +912,20 @@ function Login({ onLogin, theme, onToggleTheme }) {
           {busy ? <Spinner size={12} /> : null}
           {busy ? "AUTHENTICATING..." : "UNLOCK DASHBOARD"}
         </button>
+        {serverDown && (
+          <div style={{ marginTop: 28, borderTop: `1px solid ${T.line}`, paddingTop: 20 }}>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 12, letterSpacing: "0.06em" }}>
+              Server offline — browse with mock data
+            </div>
+            <button onClick={() => onLogin(DEMO_TOKEN)}
+              style={{ background: "none", border: `1px solid ${T.line}`, color: T.muted,
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.13em", padding: "8px 14px",
+                borderRadius: 6, cursor: "pointer" }}>
+              DEMO MODE
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   );
@@ -3673,12 +3730,12 @@ function Dashboard({ token, onLogout, theme, onToggleTheme }) {
   const selectAll  = useCallback(() => { setSelectedBots(null); localStorage.removeItem("degens_selected_bots"); }, []);
   const selectNone = useCallback(() => { setSelectedBots([]); localStorage.setItem("degens_selected_bots", "[]"); }, []);
 
-  const apiFetch = useCallback((path) =>
-    fetch(path, { headers: { Authorization: `Bearer ${token}` } })
+  const apiFetch = useCallback((path) => {
+    if (token === DEMO_TOKEN) return demoFetch(path);
+    return fetch(path, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => { if (r.status === 401) { clearToken(); onLogout(); } return r.json(); })
-      .catch(() => null),
-    [token, onLogout]
-  );
+      .catch(() => null);
+  }, [token, onLogout]);
 
   const poll = useCallback(async () => {
     const [statusData, equityData, infoData, histData] = await Promise.all([
@@ -3789,6 +3846,7 @@ function Dashboard({ token, onLogout, theme, onToggleTheme }) {
 
   // WebSocket connection — push updates, fall back to polling on disconnect
   useEffect(() => {
+    if (token === DEMO_TOKEN) return; // no WS in demo mode
     let reconnectTimer = null;
 
     const connect = () => {
@@ -3885,6 +3943,22 @@ function Dashboard({ token, onLogout, theme, onToggleTheme }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <style>{getGlobalCss()}</style>
+
+      {/* Demo mode banner */}
+      {token === DEMO_TOKEN && (
+        <div style={{
+          padding: "7px 14px", background: "rgba(94,161,255,0.08)",
+          borderBottom: `1px solid rgba(94,161,255,0.18)`,
+          fontSize: 10, color: "#5ea1ff", fontWeight: 700,
+          display: "flex", alignItems: "center", gap: 10,
+          letterSpacing: "0.10em",
+        }}>
+          DEMO MODE — mock data only
+          <span style={{ fontWeight: 400, color: T.muted, letterSpacing: "0.04em" }}>
+            Connect your server to see live bot data
+          </span>
+        </div>
+      )}
 
       {/* Circuit breaker banner */}
       {coolingBots.length > 0 && (
