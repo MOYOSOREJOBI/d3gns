@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: d3gns
+    runtime: docker
+    plan: free
+    envVars:
+      - key: DB_PATH
+        value: /opt/render/project/data/bots.db
+      - key: LOG_DIR
+        value: /opt/render/project/data
+    disk:
+      name: d3gns-data
+      mountPath: /opt/render/project/data
+      sizeGB: 1
