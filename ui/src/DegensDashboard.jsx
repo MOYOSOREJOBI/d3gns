@@ -1136,33 +1136,7 @@ function OverviewTab({ bots, equity, info, historySummary, token }) {
         </div>
       )}
 
-      {/* ── T1 Metric Row ── */}
-      <div style={{ display: "grid",
-        gridTemplateColumns: isMobile ? "1fr 1fr" : isTablet ? "repeat(3,minmax(0,1fr))" : "repeat(6,minmax(0,1fr))",
-        gap: SP.md }}>
-        {[
-          { k: "Portfolio",   v: `$${t.progress.toFixed(2)}`, s: `$${t.bank.toFixed(0)} active · $${t.locked.toFixed(0)} out` },
-          { k: "P&L",         v: `${t.pnl >= 0 ? "+" : ""}$${t.pnl.toFixed(2)}`, s: `${t.pnlPct >= 0 ? "+" : ""}${t.pnlPct.toFixed(1)}% vs start`, c: t.pnl >= 0 ? T.green : T.red },
-          { k: "Vault",       v: `$${t.vault.toFixed(2)}`,    s: "locked · never re-risked", c: T.yellow },
-          { k: "Withdrawn",   v: `$${t.locked.toFixed(2)}`,   s: "profit out of play", c: T.blue },
-          { k: "Win Rate",    v: `${t.winRate}%`,              s: `${t.active}/${bots.length} bots active`, c: T.blue },
-          { k: "Session Bets",v: t.bets.toLocaleString(),      s: `${t.hBets.toLocaleString()} all-time` },
-        ].map((m, i) => (
-          <div key={m.k} style={{
-            borderTop: `1px solid ${i === 0 ? T.blue + "55" : T.line}`,
-            paddingTop: SP.sm,
-          }}>
-            <Label style={{ marginBottom: SP.sm }}>{m.k}</Label>
-            <div style={{ fontSize: i === 0 ? 28 : 22, fontWeight: 800,
-              letterSpacing: "-0.04em", color: m.c || T.fg, lineHeight: 1 }}>
-              {m.v}
-            </div>
-            <div style={{ color: T.muted, fontSize: 10, marginTop: SP.xs, lineHeight: 1.5 }}>{m.s}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Compact Bot Strip — snapshot only, full workspace is in Bots tab ── */}
+      {/* ── Compact Bot Strip — snapshot first, always visible above charts ── */}
       <div>
         <SectionHeader right={`${bots.length} bots · full workspace → Bots tab`}>
           Bot Snapshot
@@ -1242,6 +1216,32 @@ function OverviewTab({ bots, equity, info, historySummary, token }) {
             })}
           </div>
         )}
+      </div>
+
+      {/* ── T1 Metric Row ── */}
+      <div style={{ display: "grid",
+        gridTemplateColumns: isMobile ? "1fr 1fr" : isTablet ? "repeat(3,minmax(0,1fr))" : "repeat(6,minmax(0,1fr))",
+        gap: SP.md }}>
+        {[
+          { k: "Portfolio",   v: `$${t.progress.toFixed(2)}`, s: `$${t.bank.toFixed(0)} active · $${t.locked.toFixed(0)} out` },
+          { k: "P&L",         v: `${t.pnl >= 0 ? "+" : ""}$${t.pnl.toFixed(2)}`, s: `${t.pnlPct >= 0 ? "+" : ""}${t.pnlPct.toFixed(1)}% vs start`, c: t.pnl >= 0 ? T.green : T.red },
+          { k: "Vault",       v: `$${t.vault.toFixed(2)}`,    s: "locked · never re-risked", c: T.yellow },
+          { k: "Withdrawn",   v: `$${t.locked.toFixed(2)}`,   s: "profit out of play", c: T.blue },
+          { k: "Win Rate",    v: `${t.winRate}%`,              s: `${t.active}/${bots.length} bots active`, c: T.blue },
+          { k: "Session Bets",v: t.bets.toLocaleString(),      s: `${t.hBets.toLocaleString()} all-time` },
+        ].map((m, i) => (
+          <div key={m.k} style={{
+            borderTop: `1px solid ${i === 0 ? T.blue + "55" : T.line}`,
+            paddingTop: SP.sm,
+          }}>
+            <Label style={{ marginBottom: SP.sm }}>{m.k}</Label>
+            <div style={{ fontSize: i === 0 ? 28 : 22, fontWeight: 800,
+              letterSpacing: "-0.04em", color: m.c || T.fg, lineHeight: 1 }}>
+              {m.v}
+            </div>
+            <div style={{ color: T.muted, fontSize: 10, marginTop: SP.xs, lineHeight: 1.5 }}>{m.s}</div>
+          </div>
+        ))}
       </div>
 
       {/* ── Portfolio Equity Chart ── */}
