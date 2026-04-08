@@ -1,25 +1,37 @@
 """
 Configuration for the DeG£N$ multi-bot system.
 7-phase risk model: FLOOR → ULTRA_SAFE → SAFE → CAREFUL → NORMAL → AGGRESSIVE → TURBO
+Secrets are loaded from environment variables (set in .env locally, Render env vars in prod).
 """
+import os
+from pathlib import Path
+
+# Load .env file if present (local dev only — Render/prod uses real env vars)
+_env_path = Path(__file__).parent / ".env"
+if _env_path.exists():
+    for _line in _env_path.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _, _v = _line.partition("=")
+            os.environ.setdefault(_k.strip(), _v.strip())
 
 # ─── PLATFORM CREDENTIALS ────────────────────────────────────────────────────
-STAKE_API_TOKEN     = "1587984760fd57eb6d50567c0c9d7cd01871f0d5f592e743bc14dd9def58661edecad86f74318788d804e82cffff63c1"
+STAKE_API_TOKEN     = os.getenv("STAKE_API_TOKEN", "")
 STAKE_CURRENCY      = "usdt"
 STAKE_API_URL       = "https://stake.com/_api/graphql"
 
-POLY_PRIVATE_KEY    = ""
-POLY_API_KEY        = ""
-POLY_API_SECRET     = ""
-POLY_API_PASSPHRASE = ""
+POLY_PRIVATE_KEY    = os.getenv("POLY_PRIVATE_KEY", "")
+POLY_API_KEY        = os.getenv("POLY_API_KEY", "")
+POLY_API_SECRET     = os.getenv("POLY_API_SECRET", "")
+POLY_API_PASSPHRASE = os.getenv("POLY_API_PASSPHRASE", "")
 POLY_CHAIN_ID       = 137
 POLY_HOST           = "https://clob.polymarket.com"
 
 # ─── TWILIO SMS ALERTS ────────────────────────────────────────────────────────
-TWILIO_ACCOUNT_SID  = "AC31a86a25d66881ee64e17fa5d00b0b36"
-TWILIO_AUTH_TOKEN   = "6e140274bcb8775ebadcb0aaefe23c57"
-TWILIO_FROM_NUMBER  = "+17407540039"
-NOTIFY_PHONE        = "+18257365656"
+TWILIO_ACCOUNT_SID  = os.getenv("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN   = os.getenv("TWILIO_AUTH_TOKEN", "")
+TWILIO_FROM_NUMBER  = os.getenv("TWILIO_FROM_NUMBER", "")
+NOTIFY_PHONE        = os.getenv("NOTIFY_PHONE", "")
 
 # ─── BOT LAYOUT ──────────────────────────────────────────────────────────────
 NUM_BOTS         = 10

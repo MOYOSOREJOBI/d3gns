@@ -39,7 +39,7 @@ echo "  │  ✓  http://$LOCAL_IP:8000  — phone / tablet   │"
 echo "  │     (must be on the same WiFi)                  │"
 fi
 echo "  │                                                 │"
-echo "  │  Password: Joseph992127!!!                       │"
+echo "  │  Password: (set AUTH_PASSWORD in .env)                       │"
 echo "  │  Ctrl+C to stop                                 │"
 echo "  └─────────────────────────────────────────────────┘"
 echo ""

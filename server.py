@@ -58,7 +58,7 @@ _POLY_STRATEGY_MAP = {
 _cfg.BET_DELAY_SECONDS = max(BET_DELAY_SECONDS / 10.0, 0.05)
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
-AUTH_PASSWORD   = "Joseph992127!!!"
+AUTH_PASSWORD   = os.getenv("AUTH_PASSWORD", "changeme")
 _STORED_HASH    = hashlib.sha256(AUTH_PASSWORD.encode()).hexdigest()
 _VALID_TOKENS   : dict[str, float] = {}   # token → expiry epoch
 
