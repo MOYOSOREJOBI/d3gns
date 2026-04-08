@@ -3666,6 +3666,342 @@ function GuideTab() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  SIMULATE TAB — Paper Strategy Tester (M currency)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Double-barred M symbol  (like ₦ but M — Monopoly / paper money)
+function Msym({ style = {} }) {
+  return (
+    <span style={{ display: "inline-block", position: "relative", fontWeight: 800,
+      letterSpacing: 0, lineHeight: 1, ...style }}>
+      M
+      <span style={{ position: "absolute", left: "5%", right: "5%", top: "32%",
+        borderTop: "1.5px solid currentColor", pointerEvents: "none" }} />
+      <span style={{ position: "absolute", left: "5%", right: "5%", top: "56%",
+        borderTop: "1.5px solid currentColor", pointerEvents: "none" }} />
+    </span>
+  );
+}
+
+function mfmt(n) {
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toFixed(2);
+}
+
+const SIM_PRESETS = [
+  { id: "safe",       label: "SAFE",       winRate: 0.63, betPct: 0.020, color: "#59d47a",
+    desc: "63% win · 2% bet / round" },
+  { id: "balanced",   label: "BALANCED",   winRate: 0.59, betPct: 0.035, color: "#5ea1ff",
+    desc: "59% win · 3.5% bet / round" },
+  { id: "aggressive", label: "AGGRESSIVE", winRate: 0.55, betPct: 0.055, color: "#d6af41",
+    desc: "55% win · 5.5% bet / round" },
+  { id: "turbo",      label: "TURBO",      winRate: 0.51, betPct: 0.090, color: "#ef5f57",
+    desc: "51% win · 9% bet / round — high risk" },
+];
+
+const SIM_PLATFORMS = [
+  { id: "dice",  label: "Dice",  mult: 1.92 },
+  { id: "limbo", label: "Limbo", mult: 1.98 },
+  { id: "mines", label: "Mines", mult: 2.10 },
+  { id: "poly",  label: "Poly",  mult: 1.80 },
+];
+
+function runSim({ startM, targetM, floorM, strategy, platform, maxBets }) {
+  const preset = SIM_PRESETS.find(p => p.id === strategy) || SIM_PRESETS[1];
+  const plat   = SIM_PLATFORMS.find(p => p.id === platform) || SIM_PLATFORMS[0];
+  let bank = startM;
+  let wins = 0, losses = 0, streak = 0, bestStreak = 0, worstStreak = 0;
+  const curve = [{ i: 0, v: startM }];
+  const log   = [];
+  const step  = Math.max(1, Math.floor(maxBets / 150));
+
+  for (let i = 1; i <= maxBets; i++) {
+    if (bank <= floorM || bank >= targetM) break;
+    const bet = Math.max(0.01, Math.min(bank * preset.betPct, bank - floorM));
+    const won = Math.random() < preset.winRate;
+    const pnl = won ? +(bet * (plat.mult - 1)).toFixed(4) : -bet;
+    bank = +(Math.max(0, bank + pnl)).toFixed(4);
+    if (won) { wins++; streak = streak > 0 ? streak + 1 : 1; }
+    else     { losses++; streak = streak < 0 ? streak - 1 : -1; }
+    bestStreak  = Math.max(bestStreak,  streak);
+    worstStreak = Math.min(worstStreak, streak);
+    if (i <= 40 || i % step === 0) curve.push({ i, v: +bank.toFixed(2) });
+    if (log.length < 80) log.push({ i, won, bet: +bet.toFixed(2), pnl: +pnl.toFixed(2), bank: +bank.toFixed(2) });
+  }
+
+  const total = wins + losses;
+  return {
+    finalBank: bank, preset, platform,
+    roi: +((bank - startM) / startM * 100).toFixed(1),
+    wins, losses, total,
+    winRatePct: total ? +(wins / total * 100).toFixed(1) : 0,
+    bestStreak, worstStreak,
+    hitTarget: bank >= targetM,
+    hitFloor:  bank <= floorM,
+    curve, log,
+  };
+}
+
+function SimulateTab() {
+  const [startM,   setStartM]   = useState("100");
+  const [targetM,  setTargetM]  = useState("500");
+  const [floorM,   setFloorM]   = useState("40");
+  const [strategy, setStrategy] = useState("balanced");
+  const [platform, setPlatform] = useState("dice");
+  const [maxBets,  setMaxBets]  = useState("2000");
+  const [result,   setResult]   = useState(null);
+  const [runs,     setRuns]     = useState([]);
+  const [busy,     setBusy]     = useState(false);
+
+  const run = () => {
+    setBusy(true);
+    setTimeout(() => {
+      const r = runSim({
+        startM:  parseFloat(startM)  || 100,
+        targetM: parseFloat(targetM) || 500,
+        floorM:  parseFloat(floorM)  || 40,
+        strategy, platform,
+        maxBets: parseInt(maxBets)   || 2000,
+      });
+      setResult(r);
+      setRuns(prev => [{ ...r, id: Date.now() }, ...prev].slice(0, 6));
+      setBusy(false);
+    }, 0);
+  };
+
+  const outcomeColor = result
+    ? (result.hitTarget ? T.green : result.hitFloor ? T.red : T.blue)
+    : T.blue;
+
+  const numInput = (label, value, set, prefix) => (
+    <div key={label}>
+      <Label style={{ marginBottom: 4 }}>{label}</Label>
+      <div style={{ display: "flex", alignItems: "center", gap: 4,
+        borderBottom: `1px solid ${T.line}`, paddingBottom: 5 }}>
+        {prefix && <Msym style={{ fontSize: 12, color: T.muted }} />}
+        <input value={value} onChange={e => set(e.target.value)} type="number" min="0"
+          style={{ background: "none", border: "none", color: T.fg, fontSize: 14,
+            fontWeight: 600, width: "100%", outline: "none", fontFamily: "inherit" }} />
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ maxWidth: 900, animation: "fadein .25s ease" }}>
+      <SectionHeader
+        title={<span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+          <Msym style={{ fontSize: 18 }} /> Strategy Tester
+        </span>}
+        sub="Simulate bets with fake M money — no real funds at risk"
+        style={{ marginBottom: SP.lg }}
+      />
+
+      {/* ── Config inputs ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+        gap: SP.sm, marginBottom: SP.lg }}>
+        {numInput("Starting M", startM, setStartM, true)}
+        {numInput("Target M",   targetM, setTargetM, true)}
+        {numInput("Floor M",    floorM,  setFloorM,  true)}
+        {numInput("Max Bets",   maxBets, setMaxBets,  false)}
+      </div>
+
+      {/* ── Strategy selector ── */}
+      <div style={{ marginBottom: SP.md }}>
+        <Label style={{ marginBottom: 8 }}>Strategy</Label>
+        <div style={{ display: "flex", gap: SP.xl, flexWrap: "wrap" }}>
+          {SIM_PRESETS.map(p => (
+            <button key={p.id} onClick={() => setStrategy(p.id)} className="dg-nav-btn"
+              style={{ background: "none", border: "none", padding: "4px 0 5px",
+                borderBottom: strategy === p.id ? `2px solid ${p.color}` : "2px solid transparent",
+                color: strategy === p.id ? p.color : T.muted,
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer",
+                textAlign: "left" }}>
+              {p.label}
+              <span style={{ display: "block", fontSize: 9, fontWeight: 400,
+                color: T.muted, marginTop: 2, letterSpacing: "0.04em" }}>
+                {p.desc}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Platform selector ── */}
+      <div style={{ marginBottom: SP.xl }}>
+        <Label style={{ marginBottom: 8 }}>Platform</Label>
+        <div style={{ display: "flex", gap: SP.lg, flexWrap: "wrap" }}>
+          {SIM_PLATFORMS.map(p => (
+            <button key={p.id} onClick={() => setPlatform(p.id)} className="dg-nav-btn"
+              style={{ background: "none", border: "none", padding: "3px 0 4px",
+                borderBottom: platform === p.id ? `2px solid ${T.fg}` : "2px solid transparent",
+                color: platform === p.id ? T.fg : T.muted,
+                fontSize: 10, fontWeight: platform === p.id ? 700 : 500,
+                letterSpacing: "0.08em", cursor: "pointer" }}>
+              {p.label}
+              <span style={{ fontSize: 9, color: T.muted, marginLeft: 6, fontWeight: 400 }}>
+                {p.mult}×
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Run button ── */}
+      <button onClick={run} disabled={busy} className="dg-btn"
+        style={{ background: busy ? `${T.fg}18` : T.fg, color: busy ? T.muted : T.bg,
+          border: "none", borderRadius: 6, padding: "10px 30px",
+          fontSize: 11, fontWeight: 800, letterSpacing: "0.14em",
+          cursor: busy ? "not-allowed" : "pointer",
+          display: "inline-flex", alignItems: "center", gap: 8,
+          marginBottom: SP.xl }}>
+        {busy && <Spinner size={12} />}
+        {busy ? "SIMULATING…" : "RUN SIMULATION"}
+      </button>
+
+      {/* ── Results ── */}
+      {result && (
+        <>
+          {/* Outcome banner */}
+          <div style={{ padding: "10px 14px", borderRadius: 7, marginBottom: SP.lg,
+            background: `${outcomeColor}10`, border: `1px solid ${outcomeColor}28`,
+            display: "flex", alignItems: "center", gap: SP.lg, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: outcomeColor, letterSpacing: "0.1em" }}>
+              {result.hitTarget ? "TARGET HIT" : result.hitFloor ? "FLOOR HIT — BUSTED" : "MAX BETS REACHED"}
+            </span>
+            <span style={{ fontSize: 10, color: T.muted }}>
+              {result.total.toLocaleString()} bets · {result.strategy} · {result.platform}
+            </span>
+          </div>
+
+          {/* Key metrics */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+            gap: SP.sm, marginBottom: SP.lg }}>
+            {[
+              { label: "Final Balance",
+                value: <span style={{ display:"inline-flex", alignItems:"baseline", gap:2 }}>
+                  <Msym style={{ fontSize:16 }} />{mfmt(result.finalBank)}
+                </span>,
+                color: result.roi >= 0 ? T.green : T.red, big: true },
+              { label: "ROI",
+                value: `${result.roi >= 0 ? "+" : ""}${result.roi}%`,
+                color: result.roi >= 0 ? T.green : T.red, big: true },
+              { label: "Win Rate",    value: `${result.winRatePct}%`,  color: T.fg },
+              { label: "Bets Placed", value: result.total.toLocaleString(), color: T.fg },
+              { label: "Best Streak", value: `+${result.bestStreak}`,  color: T.green },
+              { label: "Worst Streak",value: `${result.worstStreak}`,  color: T.red },
+            ].map(({ label, value, big, color }) => (
+              <div key={label} style={{ borderTop: `2px solid ${color || T.line}`, paddingTop: SP.xs }}>
+                <Label style={{ marginBottom: 3 }}>{label}</Label>
+                <div style={{ fontSize: big ? 22 : 16, fontWeight: 700,
+                  color: color || T.fg, lineHeight: 1.2 }}>
+                  {value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Equity curve */}
+          <SectionHeader title="Equity Curve" style={{ marginBottom: SP.sm }} />
+          <div style={{ height: 190, marginBottom: SP.lg }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={result.curve} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="simGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor={outcomeColor} stopOpacity={0.22} />
+                    <stop offset="95%" stopColor={outcomeColor} stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke={T.line} strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="i" tick={{ fontSize: 9, fill: T.muted }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: T.muted }} tickLine={false} axisLine={false} width={50}
+                  tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v} />
+                <Tooltip
+                  contentStyle={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 6, fontSize: 10 }}
+                  formatter={v => [`${v.toFixed(2)}`, "Balance"]}
+                  labelFormatter={l => `Bet #${l}`} />
+                <ReferenceLine y={parseFloat(floorM)  || 40}  stroke={T.red}   strokeDasharray="4 3" strokeWidth={1} />
+                <ReferenceLine y={parseFloat(targetM) || 500} stroke={T.green} strokeDasharray="4 3" strokeWidth={1} />
+                <Area type="monotone" dataKey="v" stroke={outcomeColor} strokeWidth={1.5}
+                  fill="url(#simGrad)" dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Bet log */}
+          <SectionHeader title="Bet Log" sub={`First ${result.log.length} of ${result.total}`}
+            style={{ marginBottom: SP.sm }} />
+          <div style={{ border: `1px solid ${T.line}`, borderRadius: 7, overflow: "hidden",
+            marginBottom: SP.xl }}>
+            <div style={{ display: "grid", gridTemplateColumns: "44px 52px 1fr 1fr 1fr",
+              padding: "6px 12px", background: T.card, fontSize: 9, color: T.muted,
+              fontWeight: 700, letterSpacing: "0.08em", borderBottom: `1px solid ${T.line}` }}>
+              <span>#</span><span>RESULT</span><span>BET</span><span>P&L</span><span>BALANCE</span>
+            </div>
+            <div style={{ maxHeight: 240, overflowY: "auto" }}>
+              {result.log.map(t => (
+                <div key={t.i} className="dg-row-hover"
+                  style={{ display: "grid", gridTemplateColumns: "44px 52px 1fr 1fr 1fr",
+                    padding: "5px 12px", fontSize: 10, borderBottom: `1px solid ${T.line}`,
+                    color: T.fg, alignItems: "center" }}>
+                  <span style={{ color: T.muted, fontSize: 9 }}>{t.i}</span>
+                  <span style={{ fontWeight: 700, color: t.won ? T.green : T.red, letterSpacing:"0.06em" }}>
+                    {t.won ? "WIN" : "LOSS"}
+                  </span>
+                  <span><Msym style={{ fontSize: 9 }} />{t.bet.toFixed(2)}</span>
+                  <span style={{ color: t.pnl >= 0 ? T.green : T.red, fontWeight: 600 }}>
+                    {t.pnl >= 0 ? "+" : ""}{t.pnl.toFixed(2)}
+                  </span>
+                  <span style={{ fontWeight: 600 }}>
+                    <Msym style={{ fontSize: 9 }} />{t.bank.toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Run history ── */}
+      {runs.length > 1 && (
+        <>
+          <SectionHeader title="Run History" sub="Compare last simulations"
+            style={{ marginBottom: SP.sm }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {runs.map((r, i) => {
+              const p = SIM_PRESETS.find(x => x.id === r.strategy);
+              const outCol = r.hitTarget ? T.green : r.hitFloor ? T.red : T.muted;
+              return (
+                <div key={r.id} className="dg-row-hover"
+                  style={{ display: "grid",
+                    gridTemplateColumns: "22px 96px 70px 70px 68px 80px 70px",
+                    padding: "7px 12px", border: `1px solid ${T.line}`, borderRadius: 6,
+                    fontSize: 10, color: T.fg, alignItems: "center",
+                    background: i === 0 ? `${T.fg}06` : "transparent" }}>
+                  <span style={{ color: T.muted, fontSize: 9 }}>#{runs.length - i}</span>
+                  <span style={{ color: p?.color, fontWeight: 700, letterSpacing:"0.07em" }}>
+                    {r.strategy.toUpperCase()}
+                  </span>
+                  <span style={{ color: T.muted }}>{r.platform}</span>
+                  <span style={{ color: r.roi >= 0 ? T.green : T.red, fontWeight: 700 }}>
+                    {r.roi >= 0 ? "+" : ""}{r.roi}%
+                  </span>
+                  <span style={{ color: T.muted }}>{r.winRatePct}% WR</span>
+                  <span style={{ fontWeight: 600 }}>
+                    <Msym style={{ fontSize: 9 }} />{mfmt(r.finalBank)}
+                  </span>
+                  <span style={{ color: outCol, fontWeight: 700, fontSize: 9, letterSpacing:"0.08em" }}>
+                    {r.hitTarget ? "TARGET" : r.hitFloor ? "BUSTED" : "ENDED"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  ROOT DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
 const TABS_DEF = [
@@ -3673,6 +4009,7 @@ const TABS_DEF = [
   ["Bots",      "Bots"],
   ["Analytics", "Analytics"],
   ["Wallet",    "Wallet"],
+  ["Simulate",  "Simulate"],
   ["Settings",  "Settings"],
   ["Guide",     "Guide"],
 ];
@@ -4158,6 +4495,7 @@ function Dashboard({ token, onLogout, theme, onToggleTheme }) {
         {tab === "Bots"      && <BotsTab token={token} bots={bots} equity={equity} botFilter={botFilter} setBotFilter={setBotFilter} expandedBots={expandedBots} setExpandedBots={setExpandedBots} />}
         {tab === "Analytics" && <AnalyticsTab token={token} bots={bots} equity={equity} />}
         {tab === "Wallet"    && <WalletTab token={token} bots={bots} />}
+        {tab === "Simulate"  && <SimulateTab />}
         {tab === "Settings"  && <SettingsTab token={token} tz={tz} onTzChange={setTz} />}
         {tab === "Guide"     && <GuideTab />}
       </main>
