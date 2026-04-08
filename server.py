@@ -768,9 +768,9 @@ async def auth(req: Request, body: dict = Body(...)):
         raise HTTPException(status_code=401, detail="Invalid password")
     if device_id:
         device, is_new = db.register_device(device_id, ua)
+        # Auto-approve: correct password = trusted. Device log kept for audit only.
         if not device["approved"]:
-            return JSONResponse({"ok": False, "pending": True,
-                "msg": "Device not approved. Go to Settings → Devices on an approved device to allow this one."})
+            db.approve_device(device_id)
     token = secrets.token_hex(32)
     _VALID_TOKENS[token] = time.time() + 86400 * 30  # 30 days
     return {"ok": True, "token": token}
