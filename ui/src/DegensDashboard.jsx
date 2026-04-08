@@ -1136,88 +1136,6 @@ function OverviewTab({ bots, equity, info, historySummary, token }) {
         </div>
       )}
 
-      {/* ── Compact Bot Strip — snapshot first, always visible above charts ── */}
-      <div>
-        <SectionHeader right={`${bots.length} bots · full workspace → Bots tab`}>
-          Bot Snapshot
-        </SectionHeader>
-        {bots.length === 0 ? (
-          <EmptyState message="No bots running. Start the server first." />
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            {bots.map(b => {
-              const phCol = PHASE_COLORS[b.phase] || T.muted;
-              const d = equity.map(e => ({ v: e[b.id] || b.start_amount || 100 }));
-              return (
-                <div key={b.id} className="dg-row-hover" style={{
-                  display: "grid",
-                  gridTemplateColumns: isMobile
-                    ? "1fr auto auto"
-                    : "180px 1fr 64px 64px 64px 80px",
-                  gap: SP.sm, alignItems: "center",
-                  padding: `${SP.sm}px 0`,
-                  borderBottom: `1px solid ${T.line}22`,
-                }}>
-                  {/* Name + platform */}
-                  <div style={{ display: "flex", alignItems: "center", gap: SP.sm, minWidth: 0 }}>
-                    <div style={{ width: 3, height: 28, borderRadius: 2, background: b.color, flexShrink: 0 }} />
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: b.color,
-                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {b.name || b.id}
-                      </div>
-                      <div style={{ fontSize: 8, color: T.muted, letterSpacing: "0.08em" }}>
-                        {b.platform === "stake" ? "STAKE" : "POLY"}
-                      </div>
-                    </div>
-                  </div>
-                  {/* Spark + goal bar */}
-                  {!isMobile && (
-                    <div style={{ minWidth: 0 }}>
-                      <GoalBar bankroll={b.bankroll} start={b.start_amount || 100}
-                        target={b.target_amount} floor={b.floor_amount}
-                        withdrawAt={b.withdraw_at} cautionAt={b.caution_at} recoveryAt={b.recovery_at} />
-                    </div>
-                  )}
-                  {/* Bankroll */}
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: "-0.02em" }}>
-                      ${b.bankroll.toFixed(2)}
-                    </div>
-                  </div>
-                  {/* ROI */}
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700,
-                      color: (b.roi_pct || 0) >= 0 ? T.green : T.red }}>
-                      {(b.roi_pct || 0) >= 0 ? "+" : ""}{(b.roi_pct || 0).toFixed(1)}%
-                    </div>
-                    <div style={{ fontSize: 8, color: T.muted }}>ROI</div>
-                  </div>
-                  {/* Win rate */}
-                  {!isMobile && (
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 11, fontWeight: 700 }}>{(b.winRate || 0).toFixed(0)}%</div>
-                      <div style={{ fontSize: 8, color: T.muted }}>WIN</div>
-                    </div>
-                  )}
-                  {/* Phase chip + status dot */}
-                  <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: SP.xs }}>
-                    <span style={{
-                      fontSize: 7, fontWeight: 800, padding: "2px 5px", borderRadius: 3,
-                      background: `${phCol}18`, color: phCol, letterSpacing: "0.06em",
-                      animation: b.phase === "turbo" ? "turbo-pulse 1.2s infinite" : "none",
-                    }}>
-                      {(b.phase || "").toUpperCase()}
-                    </span>
-                    <Dot ok={!b.halted} size={5} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
       {/* ── T1 Metric Row ── */}
       <div style={{ display: "grid",
         gridTemplateColumns: isMobile ? "1fr 1fr" : isTablet ? "repeat(3,minmax(0,1fr))" : "repeat(6,minmax(0,1fr))",
@@ -1347,6 +1265,81 @@ function OverviewTab({ bots, equity, info, historySummary, token }) {
           <SectionHeader>Arbitrage Opportunities</SectionHeader>
           <ArbitragePanel token={token} />
         </div>
+      </div>
+
+      {/* ── Bot Snapshot ── last, below market signals ── */}
+      <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: SP.md }}>
+        <SectionHeader right={`${bots.length} bots · full workspace → Bots tab`}>
+          Bot Snapshot
+        </SectionHeader>
+        {bots.length === 0 ? (
+          <EmptyState message="No bots running. Start the server first." />
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            {bots.map(b => {
+              const phCol = PHASE_COLORS[b.phase] || T.muted;
+              return (
+                <div key={b.id} className="dg-row-hover" style={{
+                  display: "grid",
+                  gridTemplateColumns: isMobile
+                    ? "1fr auto auto"
+                    : "180px 1fr 64px 64px 64px 80px",
+                  gap: SP.sm, alignItems: "center",
+                  padding: `${SP.sm}px 0`,
+                  borderBottom: `1px solid ${T.line}22`,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: SP.sm, minWidth: 0 }}>
+                    <div style={{ width: 3, height: 28, borderRadius: 2, background: b.color, flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: b.color,
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {b.name || b.id}
+                      </div>
+                      <div style={{ fontSize: 8, color: T.muted, letterSpacing: "0.08em" }}>
+                        {b.platform === "stake" ? "STAKE" : "POLY"}
+                      </div>
+                    </div>
+                  </div>
+                  {!isMobile && (
+                    <div style={{ minWidth: 0 }}>
+                      <GoalBar bankroll={b.bankroll} start={b.start_amount || 100}
+                        target={b.target_amount} floor={b.floor_amount}
+                        withdrawAt={b.withdraw_at} cautionAt={b.caution_at} recoveryAt={b.recovery_at} />
+                    </div>
+                  )}
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: "-0.02em" }}>
+                      ${b.bankroll.toFixed(2)}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700,
+                      color: (b.roi_pct || 0) >= 0 ? T.green : T.red }}>
+                      {(b.roi_pct || 0) >= 0 ? "+" : ""}{(b.roi_pct || 0).toFixed(1)}%
+                    </div>
+                    <div style={{ fontSize: 8, color: T.muted }}>ROI</div>
+                  </div>
+                  {!isMobile && (
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700 }}>{(b.winRate || 0).toFixed(0)}%</div>
+                      <div style={{ fontSize: 8, color: T.muted }}>WIN</div>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: SP.xs }}>
+                    <span style={{
+                      fontSize: 7, fontWeight: 800, padding: "2px 5px", borderRadius: 3,
+                      background: `${phCol}18`, color: phCol, letterSpacing: "0.06em",
+                      animation: b.phase === "turbo" ? "turbo-pulse 1.2s infinite" : "none",
+                    }}>
+                      {(b.phase || "").toUpperCase()}
+                    </span>
+                    <Dot ok={!b.halted} size={5} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -3705,12 +3698,12 @@ const SIM_PLATFORMS = [
   { id: "poly",  label: "Poly",  mult: 1.80 },
 ];
 
-function runSim({ startM, targetM, floorM, strategy, platform, maxBets }) {
+function runSim({ startM, targetM, floorM, strategy, platform, maxBets, initialBank }) {
   const preset = SIM_PRESETS.find(p => p.id === strategy) || SIM_PRESETS[1];
   const plat   = SIM_PLATFORMS.find(p => p.id === platform) || SIM_PLATFORMS[0];
-  let bank = startM;
+  let bank = initialBank !== undefined ? initialBank : startM;
   let wins = 0, losses = 0, streak = 0, bestStreak = 0, worstStreak = 0;
-  const curve = [{ i: 0, v: startM }];
+  const curve = [{ i: 0, v: +bank.toFixed(2) }];
   const log   = [];
   const step  = Math.max(1, Math.floor(maxBets / 150));
 
@@ -3730,7 +3723,7 @@ function runSim({ startM, targetM, floorM, strategy, platform, maxBets }) {
 
   const total = wins + losses;
   return {
-    finalBank: bank, preset, platform,
+    finalBank: bank, preset, platform, strategy,
     roi: +((bank - startM) / startM * 100).toFixed(1),
     wins, losses, total,
     winRatePct: total ? +(wins / total * 100).toFixed(1) : 0,
@@ -3741,53 +3734,211 @@ function runSim({ startM, targetM, floorM, strategy, platform, maxBets }) {
   };
 }
 
+function runMonteCarlo({ startM, targetM, floorM, strategy, platform, maxBets, runs = 200 }) {
+  let hitTarget = 0, hitFloor = 0, maxBetsReached = 0;
+  const finals = [];
+  for (let i = 0; i < runs; i++) {
+    const r = runSim({ startM, targetM, floorM, strategy, platform, maxBets });
+    if (r.hitTarget)     hitTarget++;
+    else if (r.hitFloor) hitFloor++;
+    else                 maxBetsReached++;
+    finals.push(r.finalBank);
+  }
+  finals.sort((a, b) => a - b);
+  const avg = finals.reduce((a, b) => a + b, 0) / runs;
+  return {
+    pTarget:    +(hitTarget      / runs * 100).toFixed(1),
+    pFloor:     +(hitFloor       / runs * 100).toFixed(1),
+    pMaxBets:   +(maxBetsReached / runs * 100).toFixed(1),
+    avgFinal:   +avg.toFixed(2),
+    medFinal:   +finals[Math.floor(runs / 2)].toFixed(2),
+    worstFinal: +finals[0].toFixed(2),
+    bestFinal:  +finals[runs - 1].toFixed(2),
+  };
+}
+
+function realWorldTime(total, platform) {
+  // Stake: ~1 bet/sec; Poly: ~8 bets/hour (≈450 sec/bet)
+  const seconds = platform === "poly" ? total * 450 : total;
+  if (seconds < 60)    return `${seconds}s`;
+  if (seconds < 3600)  return `${Math.round(seconds / 60)}m`;
+  if (seconds < 86400) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  }
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  return h > 0 ? `${d}d ${h}h` : `${d}d`;
+}
+
+function calcEV(strategy, platform) {
+  const preset = SIM_PRESETS.find(p => p.id === strategy) || SIM_PRESETS[1];
+  const plat   = SIM_PLATFORMS.find(p => p.id === platform) || SIM_PLATFORMS[0];
+  return +(preset.winRate * (plat.mult - 1) - (1 - preset.winRate)).toFixed(4);
+}
+
+function getRecommendations(result, mc, ev, cfg) {
+  const recs = [];
+  const floorPct  = cfg.startM > 0 ? (cfg.startM - cfg.floorM) / cfg.startM * 100 : 0;
+  const preset    = SIM_PRESETS.find(p => p.id === result.strategy) || SIM_PRESETS[1];
+  // EV
+  if (ev < -0.04) {
+    recs.push({ type: "error", text: `Strong negative EV (${(ev*100).toFixed(2)}% per bet). The house has a large edge — long-term losses are near certain. Switch to a higher win-rate strategy.` });
+  } else if (ev < 0) {
+    recs.push({ type: "warn", text: `Slight negative EV (${(ev*100).toFixed(2)}% per bet). House edge will erode bankroll over time. Keep sessions short or raise win-rate strategy.` });
+  } else {
+    recs.push({ type: "ok", text: `Positive EV (+${(ev*100).toFixed(2)}% per bet). Mathematical edge exists — strategy is viable long-term.` });
+  }
+  // Bust risk (from MC)
+  if (mc) {
+    if (mc.pFloor > 65) {
+      recs.push({ type: "error", text: `High bust probability (${mc.pFloor}% across 200 sims). Widen floor buffer, lower bet %, or switch to SAFE strategy immediately.` });
+    } else if (mc.pFloor > 35) {
+      recs.push({ type: "warn", text: `Moderate bust risk (${mc.pFloor}%). Consider dropping one strategy level or raising your floor.` });
+    } else {
+      recs.push({ type: "ok", text: `Bust risk is controlled at ${mc.pFloor}% — good risk management.` });
+    }
+    // Target reachability
+    if (mc.pTarget < 15) {
+      recs.push({ type: "warn", text: `Only ${mc.pTarget}% chance of hitting target in ${cfg.maxBets.toLocaleString()} bets. Lower your target or increase max bets.` });
+    } else if (mc.pTarget > 55) {
+      recs.push({ type: "ok", text: `Strong target probability (${mc.pTarget}%) — on track to hit goal.` });
+    }
+  }
+  // Floor buffer
+  if (floorPct < 25) {
+    recs.push({ type: "warn", text: `Floor is only ${floorPct.toFixed(0)}% below start — very tight. Set floor 35–50% below start to survive variance.` });
+  }
+  // Streak survivability
+  const survivable = cfg.floorM > 0 && cfg.startM > 0
+    ? Math.floor(Math.log(cfg.floorM / cfg.startM) / Math.log(1 - preset.betPct))
+    : 99;
+  if (survivable < 12) {
+    recs.push({ type: "warn", text: `At ${(preset.betPct*100).toFixed(1)}% bet sizing you survive only ~${survivable} max losses before hitting floor. Reduce bet % or widen floor.` });
+  }
+  if (result.worstStreak < -14) {
+    recs.push({ type: "warn", text: `Worst loss streak was ${Math.abs(result.worstStreak)} — ensure your floor allows at least 15 consecutive losses without busting.` });
+  }
+  return recs;
+}
+
 function SimulateTab() {
-  const [startM,   setStartM]   = useState("100");
-  const [targetM,  setTargetM]  = useState("500");
-  const [floorM,   setFloorM]   = useState("40");
-  const [strategy, setStrategy] = useState("balanced");
-  const [platform, setPlatform] = useState("dice");
-  const [maxBets,  setMaxBets]  = useState("2000");
-  const [result,   setResult]   = useState(null);
-  const [runs,     setRuns]     = useState([]);
-  const [busy,     setBusy]     = useState(false);
-  const [progress, setProgress] = useState(0); // bets completed so far
+  const [startM,    setStartM]    = useState("100");
+  const [targetM,   setTargetM]   = useState("500");
+  const [floorM,    setFloorM]    = useState("40");
+  const [strategy,  setStrategy]  = useState("balanced");
+  const [platform,  setPlatform]  = useState("dice");
+  const [maxBets,   setMaxBets]   = useState("2000");
+  const [contBets,  setContBets]  = useState("1000");
+  const [result,    setResult]    = useState(null);
+  const [mcResult,  setMcResult]  = useState(null);
+  const [runs,      setRuns]      = useState([]);
+  const [busy,      setBusy]      = useState(false);
+  const [mcBusy,    setMcBusy]    = useState(false);
+  const [progress,  setProgress]  = useState(0);
+  const [simMs,     setSimMs]     = useState(null);
+  const cfgRef = useRef(null);
+
+  const kickMonteCarlo = (cfg) => {
+    setMcBusy(true);
+    setTimeout(() => {
+      const mc = runMonteCarlo({ ...cfg, runs: 200 });
+      setMcResult(mc);
+      setMcBusy(false);
+    }, 0);
+  };
+
+  const animateTo = (from, to, onTick, onDone) => {
+    let cur = from;
+    const step = Math.max(1, Math.floor((to - from) / 30));
+    const tick = setInterval(() => {
+      cur = Math.min(cur + step, to);
+      onTick(cur);
+      if (cur >= to) { clearInterval(tick); onDone(); }
+    }, 30);
+  };
 
   const run = () => {
-    setBusy(true);
-    setProgress(0);
-    setResult(null);
+    setBusy(true); setProgress(0); setResult(null); setMcResult(null);
     const max = parseInt(maxBets) || 2000;
-    // Run in chunks so we can update the progress counter without blocking UI
-    const CHUNK = Math.max(50, Math.floor(max / 40));
     const cfg = {
       startM:  parseFloat(startM)  || 100,
       targetM: parseFloat(targetM) || 500,
       floorM:  parseFloat(floorM)  || 40,
       strategy, platform, maxBets: max,
     };
-    // Full sim still runs in one shot for accuracy, but we animate the counter
+    cfgRef.current = cfg;
+    const t0 = Date.now();
     setTimeout(() => {
-      const r = runSim(cfg);
-      // Animate bet counter from 0 → r.total
-      let displayed = 0;
-      const step = Math.max(1, Math.floor(r.total / 30));
-      const tick = setInterval(() => {
-        displayed = Math.min(displayed + step, r.total);
-        setProgress(displayed);
-        if (displayed >= r.total) {
-          clearInterval(tick);
-          setResult(r);
-          setRuns(prev => [{ ...r, id: Date.now() }, ...prev].slice(0, 6));
-          setBusy(false);
-        }
-      }, 30);
+      const r = { ...runSim(cfg), originalStart: cfg.startM };
+      const elapsed = Date.now() - t0;
+      animateTo(0, r.total, setProgress, () => {
+        setResult(r); setSimMs(elapsed);
+        setRuns(prev => [{ ...r, id: Date.now() }, ...prev].slice(0, 6));
+        setBusy(false);
+        kickMonteCarlo(cfg);
+      });
+    }, 0);
+  };
+
+  const continueSim = () => {
+    if (!result || busy) return;
+    const more = parseInt(contBets) || 1000;
+    const cfg  = cfgRef.current || {
+      startM: parseFloat(startM) || 100, targetM: parseFloat(targetM) || 500,
+      floorM: parseFloat(floorM) || 40,  strategy, platform,
+    };
+    setBusy(true); setProgress(result.total); setMcResult(null);
+    const t0 = Date.now();
+    setTimeout(() => {
+      const r2 = runSim({
+        ...cfg, maxBets: more,
+        initialBank: result.finalBank,
+        startM:      result.originalStart,
+      });
+      const elapsed = Date.now() - t0;
+      const newTotal = result.total + r2.total;
+      const newWins  = result.wins  + r2.wins;
+      const newLoss  = result.losses + r2.losses;
+      const merged = {
+        ...r2,
+        wins:         newWins,
+        losses:       newLoss,
+        total:        newTotal,
+        winRatePct:   newTotal ? +(newWins / newTotal * 100).toFixed(1) : 0,
+        roi:          +((r2.finalBank - result.originalStart) / result.originalStart * 100).toFixed(1),
+        bestStreak:   Math.max(result.bestStreak,  r2.bestStreak),
+        worstStreak:  Math.min(result.worstStreak, r2.worstStreak),
+        originalStart: result.originalStart,
+        curve: [
+          ...result.curve,
+          ...r2.curve.map(p => ({ ...p, i: p.i + result.total })),
+        ],
+        log: [
+          ...result.log,
+          ...r2.log.map(p => ({ ...p, i: p.i + result.total })),
+        ].slice(-80),
+      };
+      animateTo(result.total, newTotal, setProgress, () => {
+        setResult(merged); setSimMs(elapsed);
+        setRuns(prev => [{ ...merged, id: Date.now() }, ...prev.slice(0, 5)]);
+        setBusy(false);
+        kickMonteCarlo({ ...cfg, startM: result.originalStart });
+      });
     }, 0);
   };
 
   const outcomeColor = result
     ? (result.hitTarget ? T.green : result.hitFloor ? T.red : T.blue)
     : T.blue;
+
+  const ev  = calcEV(strategy, platform);
+  const cfg = cfgRef.current || {
+    startM: parseFloat(startM)||100, targetM: parseFloat(targetM)||500,
+    floorM: parseFloat(floorM)||40,  maxBets: parseInt(maxBets)||2000,
+  };
+  const recs = result ? getRecommendations(result, mcResult, calcEV(result.strategy, result.platform), cfg) : [];
 
   const numInput = (label, value, set, prefix) => (
     <div key={label}>
@@ -3808,17 +3959,17 @@ function SimulateTab() {
         title={<span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
           <Msym style={{ fontSize: 18 }} /> Strategy Tester
         </span>}
-        sub="Simulate bets with fake M money — no real funds at risk"
+        sub="Simulate bets with fake ℳ money — no real funds at risk"
         style={{ marginBottom: SP.lg }}
       />
 
       {/* ── Config inputs ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
         gap: SP.sm, marginBottom: SP.lg }}>
-        {numInput("Starting M", startM, setStartM, true)}
-        {numInput("Target M",   targetM, setTargetM, true)}
-        {numInput("Floor M",    floorM,  setFloorM,  true)}
-        {numInput("Max Bets",   maxBets, setMaxBets,  false)}
+        {numInput("Starting ℳ", startM,  setStartM,  true)}
+        {numInput("Target ℳ",   targetM, setTargetM, true)}
+        {numInput("Floor ℳ",    floorM,  setFloorM,  true)}
+        {numInput("Max Bets",   maxBets, setMaxBets, false)}
       </div>
 
       {/* ── Strategy selector ── */}
@@ -3830,8 +3981,7 @@ function SimulateTab() {
               style={{ background: "none", border: "none", padding: "4px 0 5px",
                 borderBottom: strategy === p.id ? `2px solid ${p.color}` : "2px solid transparent",
                 color: strategy === p.id ? p.color : T.muted,
-                fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer",
-                textAlign: "left" }}>
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer", textAlign: "left" }}>
               {p.label}
               <span style={{ display: "block", fontSize: 9, fontWeight: 400,
                 color: T.muted, marginTop: 2, letterSpacing: "0.04em" }}>
@@ -3843,7 +3993,7 @@ function SimulateTab() {
       </div>
 
       {/* ── Platform selector ── */}
-      <div style={{ marginBottom: SP.xl }}>
+      <div style={{ marginBottom: SP.lg }}>
         <Label style={{ marginBottom: 8 }}>Platform</Label>
         <div style={{ display: "flex", gap: SP.lg, flexWrap: "wrap" }}>
           {SIM_PLATFORMS.map(p => (
@@ -3862,37 +4012,73 @@ function SimulateTab() {
         </div>
       </div>
 
-      {/* ── Run button + live counter ── */}
-      <div style={{ marginBottom: SP.xl }}>
+      {/* ── EV preview ── */}
+      <div style={{ marginBottom: SP.xl, display: "flex", alignItems: "center", gap: SP.md,
+        fontSize: 10, color: T.muted }}>
+        <span>EV per bet:</span>
+        <span style={{ fontWeight: 700, color: ev >= 0 ? T.green : T.red }}>
+          {ev >= 0 ? "+" : ""}{(ev * 100).toFixed(2)}%
+        </span>
+        <span style={{ color: T.muted }}>·</span>
+        <span>Real-world {(parseInt(maxBets)||2000).toLocaleString()} bets ≈</span>
+        <span style={{ fontWeight: 600, color: T.fg }}>
+          {realWorldTime(parseInt(maxBets)||2000, platform)}
+        </span>
+      </div>
+
+      {/* ── Run / Continue buttons ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: SP.md, flexWrap: "wrap", marginBottom: SP.xl }}>
         <button onClick={run} disabled={busy} className="dg-btn"
           style={{ background: busy ? `${T.fg}18` : T.fg, color: busy ? T.muted : T.bg,
-            border: "none", borderRadius: 6, padding: "10px 30px",
+            border: "none", borderRadius: 6, padding: "10px 26px",
             fontSize: 11, fontWeight: 800, letterSpacing: "0.14em",
             cursor: busy ? "not-allowed" : "pointer",
             display: "inline-flex", alignItems: "center", gap: 8 }}>
           {busy && <Spinner size={12} />}
-          {busy ? `SIMULATING…` : "RUN SIMULATION"}
+          {busy ? "SIMULATING…" : "RUN SIMULATION"}
         </button>
-        {busy && (
-          <div style={{ marginTop: SP.md }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: SP.sm, marginBottom: 6 }}>
-              <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums" }}>
-                {progress.toLocaleString()}
-              </span>
-              <span style={{ fontSize: 10, color: T.muted, letterSpacing: "0.08em" }}>
-                / {(parseInt(maxBets)||2000).toLocaleString()} BETS
-              </span>
-            </div>
-            <div style={{ height: 2, background: T.line, borderRadius: 2, overflow: "hidden", width: 260 }}>
-              <div style={{
-                height: "100%", borderRadius: 2, background: T.blue,
-                width: `${Math.min(100, (progress / (parseInt(maxBets)||2000)) * 100)}%`,
-                transition: "width 0.03s linear"
-              }} />
+
+        {result && !result.hitFloor && (
+          <div style={{ display: "flex", alignItems: "center", gap: SP.sm }}>
+            <button onClick={continueSim} disabled={busy} className="dg-btn"
+              style={{ background: "none", border: `1px solid ${T.line}`, color: busy ? T.muted : T.fg,
+                borderRadius: 6, padding: "9px 18px", fontSize: 10, fontWeight: 700,
+                letterSpacing: "0.1em", cursor: busy ? "not-allowed" : "pointer",
+                display: "inline-flex", alignItems: "center", gap: 6 }}>
+              + CONTINUE
+            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <input value={contBets} onChange={e => setContBets(e.target.value)} type="number" min="100"
+                style={{ background: `${T.fg}08`, border: `1px solid ${T.line}`, color: T.fg,
+                  borderRadius: 4, padding: "6px 8px", fontSize: 10, width: 80,
+                  outline: "none", fontFamily: "inherit" }} />
+              <span style={{ fontSize: 9, color: T.muted }}>more bets</span>
             </div>
           </div>
         )}
       </div>
+
+      {/* ── Progress bar ── */}
+      {busy && (
+        <div style={{ marginBottom: SP.lg }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: SP.sm, marginBottom: 6 }}>
+            <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.04em",
+              fontVariantNumeric: "tabular-nums" }}>
+              {progress.toLocaleString()}
+            </span>
+            <span style={{ fontSize: 10, color: T.muted, letterSpacing: "0.08em" }}>
+              / {((result?.total || 0) + (parseInt(maxBets)||2000)).toLocaleString()} BETS
+            </span>
+          </div>
+          <div style={{ height: 2, background: T.line, borderRadius: 2, overflow: "hidden", width: 260 }}>
+            <div style={{
+              height: "100%", borderRadius: 2, background: T.blue,
+              width: `${Math.min(100, (progress / Math.max(1, (result?.total||0) + (parseInt(maxBets)||2000))) * 100)}%`,
+              transition: "width 0.03s linear"
+            }} />
+          </div>
+        </div>
+      )}
 
       {/* ── Results ── */}
       {result && (
@@ -3907,6 +4093,14 @@ function SimulateTab() {
             <span style={{ fontSize: 10, color: T.muted }}>
               {result.total.toLocaleString()} bets · {result.strategy} · {result.platform}
             </span>
+            <span style={{ fontSize: 10, color: T.muted }}>
+              ~{realWorldTime(result.total, result.platform)} real-world
+            </span>
+            {simMs != null && (
+              <span style={{ fontSize: 9, color: `${T.muted}88` }}>
+                sim ran in {simMs}ms
+              </span>
+            )}
           </div>
 
           {/* Key metrics */}
@@ -3918,23 +4112,93 @@ function SimulateTab() {
                   <Msym style={{ fontSize:16 }} />{mfmt(result.finalBank)}
                 </span>,
                 color: result.roi >= 0 ? T.green : T.red, big: true },
-              { label: "ROI",
-                value: `${result.roi >= 0 ? "+" : ""}${result.roi}%`,
+              { label: "ROI",         value: `${result.roi >= 0 ? "+" : ""}${result.roi}%`,
                 color: result.roi >= 0 ? T.green : T.red, big: true },
               { label: "Win Rate",    value: `${result.winRatePct}%`,  color: T.fg },
-              { label: "Bets Placed", value: result.total.toLocaleString(), color: T.fg },
+              { label: "Bets",        value: result.total.toLocaleString(), color: T.fg },
               { label: "Best Streak", value: `+${result.bestStreak}`,  color: T.green },
               { label: "Worst Streak",value: `${result.worstStreak}`,  color: T.red },
+              { label: "EV / Bet",
+                value: (() => { const e = calcEV(result.strategy, result.platform);
+                  return `${e >= 0 ? "+" : ""}${(e*100).toFixed(2)}%`; })(),
+                color: calcEV(result.strategy, result.platform) >= 0 ? T.green : T.red },
+              { label: "Real-World",  value: realWorldTime(result.total, result.platform), color: T.muted },
             ].map(({ label, value, big, color }) => (
               <div key={label} style={{ borderTop: `2px solid ${color || T.line}`, paddingTop: SP.xs }}>
                 <Label style={{ marginBottom: 3 }}>{label}</Label>
-                <div style={{ fontSize: big ? 22 : 16, fontWeight: 700,
+                <div style={{ fontSize: big ? 22 : 15, fontWeight: 700,
                   color: color || T.fg, lineHeight: 1.2 }}>
                   {value}
                 </div>
               </div>
             ))}
           </div>
+
+          {/* ── Monte Carlo probability block ── */}
+          <div style={{ marginBottom: SP.lg, padding: "12px 14px", borderRadius: 7,
+            border: `1px solid ${T.line}`, background: `${T.fg}04` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: SP.sm, marginBottom: SP.sm }}>
+              <Label>Monte Carlo — 200 simulations</Label>
+              {mcBusy && <Spinner size={10} />}
+            </div>
+            {mcResult ? (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: SP.sm }}>
+                {[
+                  { label: "P(Hit Target)",  value: `${mcResult.pTarget}%`,  color: T.green },
+                  { label: "P(Bust Floor)",   value: `${mcResult.pFloor}%`,   color: T.red },
+                  { label: "P(Max Bets)",    value: `${mcResult.pMaxBets}%`, color: T.muted },
+                  { label: "Avg Final",
+                    value: <span style={{ display:"inline-flex", alignItems:"baseline", gap:1 }}>
+                      <Msym style={{ fontSize:12 }} />{mfmt(mcResult.avgFinal)}
+                    </span>,
+                    color: mcResult.avgFinal >= (parseFloat(startM)||100) ? T.green : T.red },
+                  { label: "Median Final",
+                    value: <span style={{ display:"inline-flex", alignItems:"baseline", gap:1 }}>
+                      <Msym style={{ fontSize:12 }} />{mfmt(mcResult.medFinal)}
+                    </span>,
+                    color: T.fg },
+                  { label: "Worst Outcome",
+                    value: <span style={{ display:"inline-flex", alignItems:"baseline", gap:1 }}>
+                      <Msym style={{ fontSize:12 }} />{mfmt(mcResult.worstFinal)}
+                    </span>,
+                    color: T.red },
+                ].map(({ label, value, color }) => (
+                  <div key={label}>
+                    <div style={{ fontSize: 8, color: T.muted, fontWeight: 700,
+                      letterSpacing: "0.08em", marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: color || T.fg }}>
+                      {value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ fontSize: 10, color: T.muted }}>
+                {mcBusy ? "Running 200 simulations…" : "Run a simulation to see probability analysis."}
+              </div>
+            )}
+          </div>
+
+          {/* ── Recommendations ── */}
+          {recs.length > 0 && (
+            <div style={{ marginBottom: SP.lg }}>
+              <Label style={{ marginBottom: SP.sm }}>Recommendations</Label>
+              <div style={{ display: "flex", flexDirection: "column", gap: SP.xs }}>
+                {recs.map((r, i) => {
+                  const col = r.type === "ok" ? T.green : r.type === "error" ? T.red : T.yellow;
+                  const icon = r.type === "ok" ? "✓" : r.type === "error" ? "✕" : "!";
+                  return (
+                    <div key={i} style={{ display: "flex", gap: SP.sm, padding: "8px 12px",
+                      borderRadius: 6, background: `${col}08`, border: `1px solid ${col}22`,
+                      fontSize: 10, color: T.fg, lineHeight: 1.5 }}>
+                      <span style={{ color: col, fontWeight: 800, flexShrink: 0, fontSize: 11 }}>{icon}</span>
+                      <span>{r.text}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Equity curve */}
           <SectionHeader title="Equity Curve" style={{ marginBottom: SP.sm }} />
@@ -3964,7 +4228,8 @@ function SimulateTab() {
           </div>
 
           {/* Bet log */}
-          <SectionHeader title="Bet Log" sub={`First ${result.log.length} of ${result.total}`}
+          <SectionHeader title="Bet Log"
+            sub={`Last ${result.log.length} of ${result.total.toLocaleString()} total`}
             style={{ marginBottom: SP.sm }} />
           <div style={{ border: `1px solid ${T.line}`, borderRadius: 7, overflow: "hidden",
             marginBottom: SP.xl }}>
@@ -3974,21 +4239,21 @@ function SimulateTab() {
               <span>#</span><span>RESULT</span><span>BET</span><span>P&L</span><span>BALANCE</span>
             </div>
             <div style={{ maxHeight: 240, overflowY: "auto" }}>
-              {result.log.map(t => (
-                <div key={t.i} className="dg-row-hover"
+              {result.log.map(row => (
+                <div key={row.i} className="dg-row-hover"
                   style={{ display: "grid", gridTemplateColumns: "44px 52px 1fr 1fr 1fr",
                     padding: "5px 12px", fontSize: 10, borderBottom: `1px solid ${T.line}`,
                     color: T.fg, alignItems: "center" }}>
-                  <span style={{ color: T.muted, fontSize: 9 }}>{t.i}</span>
-                  <span style={{ fontWeight: 700, color: t.won ? T.green : T.red, letterSpacing:"0.06em" }}>
-                    {t.won ? "WIN" : "LOSS"}
+                  <span style={{ color: T.muted, fontSize: 9 }}>{row.i}</span>
+                  <span style={{ fontWeight: 700, color: row.won ? T.green : T.red, letterSpacing:"0.06em" }}>
+                    {row.won ? "WIN" : "LOSS"}
                   </span>
-                  <span><Msym style={{ fontSize: 9 }} />{t.bet.toFixed(2)}</span>
-                  <span style={{ color: t.pnl >= 0 ? T.green : T.red, fontWeight: 600 }}>
-                    {t.pnl >= 0 ? "+" : ""}{t.pnl.toFixed(2)}
+                  <span><Msym style={{ fontSize: 9 }} />{row.bet.toFixed(2)}</span>
+                  <span style={{ color: row.pnl >= 0 ? T.green : T.red, fontWeight: 600 }}>
+                    {row.pnl >= 0 ? "+" : ""}{row.pnl.toFixed(2)}
                   </span>
                   <span style={{ fontWeight: 600 }}>
-                    <Msym style={{ fontSize: 9 }} />{t.bank.toFixed(2)}
+                    <Msym style={{ fontSize: 9 }} />{row.bank.toFixed(2)}
                   </span>
                 </div>
               ))}
@@ -4009,7 +4274,7 @@ function SimulateTab() {
               return (
                 <div key={r.id} className="dg-row-hover"
                   style={{ display: "grid",
-                    gridTemplateColumns: "22px 96px 70px 70px 68px 80px 70px",
+                    gridTemplateColumns: "22px 96px 60px 60px 58px 70px 70px 60px",
                     padding: "7px 12px", border: `1px solid ${T.line}`, borderRadius: 6,
                     fontSize: 10, color: T.fg, alignItems: "center",
                     background: i === 0 ? `${T.fg}06` : "transparent" }}>
@@ -4024,6 +4289,9 @@ function SimulateTab() {
                   <span style={{ color: T.muted }}>{r.winRatePct}% WR</span>
                   <span style={{ fontWeight: 600 }}>
                     <Msym style={{ fontSize: 9 }} />{mfmt(r.finalBank)}
+                  </span>
+                  <span style={{ color: T.muted, fontSize: 9 }}>
+                    {realWorldTime(r.total, r.platform)}
                   </span>
                   <span style={{ color: outCol, fontWeight: 700, fontSize: 9, letterSpacing:"0.08em" }}>
                     {r.hitTarget ? "TARGET" : r.hitFloor ? "BUSTED" : "ENDED"}
