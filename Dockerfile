@@ -2,22 +2,23 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install Tor for VPN routing of restricted platforms
-RUN apt-get update && apt-get install -y tor --no-install-recommends \
+# System deps — no Tor in cloud (Railway blocks it), just PySocks for proxy support
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc libffi-dev nodejs npm \
     && rm -rf /var/lib/apt/lists/*
 
 # Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy full app (UI dist is pre-built locally before deploy)
+# Copy everything
 COPY . .
 
-# Persistent data directory (mounted as Fly volume)
-RUN mkdir -p /data
+# Build React UI inside container (ensures fresh build)
+RUN cd ui && npm install --silent && npm run build --silent
 
-ENV DB_PATH=/data/bots.db
-ENV LOG_DIR=/data
+ENV DB_PATH=/tmp/bots.db
+ENV LOG_DIR=/tmp
 
 EXPOSE 8000
 
