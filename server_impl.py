@@ -2729,6 +2729,13 @@ async def lifespan(app: FastAPI):
     global _STORED_HASH
     db.init_db()
     _STORED_HASH = _load_stored_hash()
+    # If AUTH_PASSWORD env is a non-default value but the DB still holds the default hash,
+    # force-update the stored hash so the startup check passes.
+    _env_pwd = os.getenv("AUTH_PASSWORD", "").strip()
+    if _env_pwd and _env_pwd != "changeme" and _using_default_password():
+        _persist_password_hash(_hash(_env_pwd), rotated=True)
+        _STORED_HASH = db.get_setting("auth_password_hash", "")
+        logger.info("Startup: AUTH_PASSWORD env applied — stored hash updated from default.")
     _maybe_upgrade_legacy_password_hash()
     _sync_expansion_catalog()
     _init_platform_services()
