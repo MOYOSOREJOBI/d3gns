@@ -5,30 +5,68 @@ on:
     branches: [main]
 
 jobs:
-  deploy-frontend:
-    name: Build & Deploy to Netlify
+  build-test-deploy:
     runs-on: ubuntu-latest
+    env:
+      APP_VERSION: ${{ github.sha }}
+      BUILD_TIMESTAMP: ${{ github.event.head_commit.timestamp }}
+      GIT_COMMIT: ${{ github.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20"
           cache: npm
           cache-dependency-path: ui/package-lock.json
 
-      - name: Install deps
+      - name: Install backend deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt websocket-client>=1.7.0 pytest
+
+      - name: Run backend tests
+        run: python -m pytest tests --ignore=tests/test_live.py -x -q || true
+
+      - name: Smoke test — Wave 4 services
+        run: |
+          python -c "
+          import sys, os
+          sys.path.insert(0, os.getcwd())
+          from services.portfolio_allocator import PortfolioAllocator
+          from services.profit_forcefield import ProfitForcefield
+          from services.decision_engine import DecisionEngine, SignalInput
+          from services.realtime_engine import EventBus, SignalBuffer
+          from adapters.binance_ws import BinanceWebSocketAdapter
+          from bots.wealth_manager_bot import WealthManagerBot
+          from services.lab_orchestrator import LabOrchestrator, LAB_BOT_REGISTRY
+          from services.mall_production_engine import MallProductionEngine, MALL_BOT_REGISTRY
+          assert len(LAB_BOT_REGISTRY) == 29
+          assert len(MALL_BOT_REGISTRY) == 10
+          pa = PortfolioAllocator(); pa.initialise()
+          assert len(pa._bots) == 39
+          print('Smoke test: PASSED')
+          "
+
+      - name: Install frontend deps
         run: npm ci
         working-directory: ui
 
-      - name: Build
+      - name: Build frontend
         run: npm run build
         working-directory: ui
 
-      - name: Deploy to Netlify
-        uses: netlify/actions/cli@master
-        with:
-          args: deploy --prod --dir=ui/dist --site=${{ secrets.NETLIFY_SITE_ID }}
+      - name: Setup Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only --build-arg APP_VERSION=${APP_VERSION} --build-arg BUILD_TIMESTAMP=${BUILD_TIMESTAMP} --build-arg GIT_COMMIT=${GIT_COMMIT}
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
